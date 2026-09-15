@@ -1,0 +1,14 @@
+-- See docs/professor-examples/ for the original example.py and test_connection.py
+-- exactly as provided in the course setup instructions.
+--
+-- example.py uses PyMySQL and confirms:
+--   - database name == your unityid (the department pre-assigns one DB per account)
+--   - autocommit=True is fine for one-off DDL scripts, but our app uses
+--     autocommit=False (see src/db/connection.py) so the booking procedure
+--     and trigger-driven writes can be wrapped in explicit transactions.
+--
+-- test_connection.py uses the "mariadb" package (MariaDB Connector/Python)
+-- instead of PyMySQL. That driver needs the MariaDB Connector/C library
+-- installed at the OS level, which is extra setup friction across a team on
+-- different machines/OSes -- we're standardizing on PyMySQL (pure Python,
+-- pip install only) for this project instead.

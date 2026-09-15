@@ -1,0 +1,18 @@
+# Credentials — never commit
+config/db_config.ini
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Env files
+.env

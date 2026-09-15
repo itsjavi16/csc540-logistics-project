@@ -1,0 +1,9 @@
+name: csc540-logistics
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.14
+  - pip
+  - pip:
+      - -r requirements.txt
