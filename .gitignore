@@ -16,3 +16,6 @@ __pycache__/
 
 # Env files
 .env
+
+# vscode workspace settings
+*.code-workspace
