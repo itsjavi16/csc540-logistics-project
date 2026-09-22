@@ -14,10 +14,18 @@ CREATE TABLE Shipper (
     FOREIGN KEY (account_id) REFERENCES Account(account_id) ON DELETE CASCADE
 );
 
+CREATE TABLE CarrierOrg (
+    carrier_org_id INT AUTO_INCREMENT PRIMARY KEY,
+    company_name   VARCHAR(100) NOT NULL
+);
+
 CREATE TABLE Carrier (
-    account_id   INT PRIMARY KEY,
-    company_name VARCHAR(100) NOT NULL,
-    FOREIGN KEY (account_id) REFERENCES Account(account_id) ON DELETE CASCADE
+    account_id     INT PRIMARY KEY,
+    carrier_org_id INT NOT NULL,
+    CONSTRAINT fk_carrier_account
+        FOREIGN KEY (account_id) REFERENCES Account(account_id) ON DELETE CASCADE,
+    CONSTRAINT fk_carrier_carrierorg
+        FOREIGN KEY (carrier_org_id) REFERENCES CarrierOrg(carrier_org_id)
 );
 
 CREATE TABLE Viewer (
@@ -35,11 +43,11 @@ CREATE TABLE Hub (
 
 CREATE TABLE Vehicle (
     vehicle_id      INT AUTO_INCREMENT PRIMARY KEY,
-    carrier_id      INT NOT NULL,
+    carrier_org_id  INT NOT NULL,
     home_hub_id     INT NOT NULL,
     vehicle_type    ENUM('BOX_TRUCK','REFRIGERATED_VAN','RAIL_CAR') NOT NULL,
-    CONSTRAINT fk_vehicle_carrier
-        FOREIGN KEY (carrier_id) REFERENCES Carrier(account_id),
+    CONSTRAINT fk_vehicle_carrierorg
+        FOREIGN KEY (carrier_org_id) REFERENCES CarrierOrg(carrier_org_id),
     CONSTRAINT fk_vehicle_home_hub
         FOREIGN KEY (home_hub_id) REFERENCES Hub(hub_id)
 );
@@ -145,4 +153,3 @@ CREATE TABLE ScanEvent (
     CONSTRAINT chk_scanevent_seq_positive
         CHECK (scan_seq > 0)
 );
-

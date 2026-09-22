@@ -1,10 +1,10 @@
 CREATE TABLE Vehicle (
     vehicle_id      INT AUTO_INCREMENT PRIMARY KEY,
-    carrier_id      INT NOT NULL,
+    carrier_org_id  INT NOT NULL,
     home_hub_id     INT NOT NULL,
     vehicle_type    ENUM('BOX_TRUCK','REFRIGERATED_VAN','RAIL_CAR') NOT NULL,
-    CONSTRAINT fk_vehicle_carrier
-        FOREIGN KEY (carrier_id) REFERENCES Carrier(account_id),
+    CONSTRAINT fk_vehicle_carrierorg
+        FOREIGN KEY (carrier_org_id) REFERENCES CarrierOrg(carrier_org_id),
     CONSTRAINT fk_vehicle_home_hub
         FOREIGN KEY (home_hub_id) REFERENCES Hub(hub_id)
 );

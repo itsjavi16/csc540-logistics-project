@@ -11,10 +11,18 @@ CREATE TABLE Shipper (
     FOREIGN KEY (account_id) REFERENCES Account(account_id) ON DELETE CASCADE
 );
 
+CREATE TABLE CarrierOrg (
+    carrier_org_id INT AUTO_INCREMENT PRIMARY KEY,
+    company_name   VARCHAR(100) NOT NULL
+);
+
 CREATE TABLE Carrier (
-    account_id   INT PRIMARY KEY,
-    company_name VARCHAR(100) NOT NULL,
-    FOREIGN KEY (account_id) REFERENCES Account(account_id) ON DELETE CASCADE
+    account_id     INT PRIMARY KEY,
+    carrier_org_id INT NOT NULL,
+    CONSTRAINT fk_carrier_account
+        FOREIGN KEY (account_id) REFERENCES Account(account_id) ON DELETE CASCADE,
+    CONSTRAINT fk_carrier_carrierorg
+        FOREIGN KEY (carrier_org_id) REFERENCES CarrierOrg(carrier_org_id)
 );
 
 CREATE TABLE Viewer (
