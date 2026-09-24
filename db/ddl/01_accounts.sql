@@ -7,18 +7,11 @@ CREATE TABLE User (
     role_type     ENUM('SHIPPER','CARRIER','VIEWER') NOT NULL
 );
 
-CREATE TABLE ShippingCompany (
-    shipper_id   INT AUTO_INCREMENT PRIMARY KEY,
-    company_name VARCHAR(100) NOT NULL
-);
-
 CREATE TABLE Shipper (
     user_id    INT PRIMARY KEY,
-    shipper_id INT NOT NULL,
+    shipper_id INT NOT NULL UNIQUE,
     CONSTRAINT fk_shipper_user
-        FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE,
-    CONSTRAINT fk_shipper_company
-        FOREIGN KEY (shipper_id) REFERENCES ShippingCompany(shipper_id)
+        FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE CarrierCompany (

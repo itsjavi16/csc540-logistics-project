@@ -10,18 +10,11 @@ CREATE TABLE User (
     role_type     ENUM('SHIPPER','CARRIER','VIEWER') NOT NULL
 );
 
-CREATE TABLE ShippingCompany (
-    shipper_id   INT AUTO_INCREMENT PRIMARY KEY,
-    company_name VARCHAR(100) NOT NULL
-);
-
 CREATE TABLE Shipper (
     user_id    INT PRIMARY KEY,
-    shipper_id INT NOT NULL,
+    shipper_id INT NOT NULL UNIQUE,
     CONSTRAINT fk_shipper_user
-        FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE,
-    CONSTRAINT fk_shipper_company
-        FOREIGN KEY (shipper_id) REFERENCES ShippingCompany(shipper_id)
+        FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE CarrierCompany (
@@ -54,15 +47,13 @@ CREATE TABLE Hub (
 );
 
 CREATE TABLE Lane (
-    lane_id         INT AUTO_INCREMENT PRIMARY KEY,
     origin_hub      CHAR(3) NOT NULL,
     destination_hub CHAR(3) NOT NULL,
+    PRIMARY KEY (origin_hub, destination_hub),
     CONSTRAINT fk_lane_origin_hub
         FOREIGN KEY (origin_hub) REFERENCES Hub(hub_id),
     CONSTRAINT fk_lane_destination_hub
         FOREIGN KEY (destination_hub) REFERENCES Hub(hub_id),
-    CONSTRAINT uq_lane_hub_pair
-        UNIQUE (origin_hub, destination_hub),
     CONSTRAINT chk_lane_hubs_distinct
         CHECK (origin_hub <> destination_hub)
 );
@@ -137,8 +128,8 @@ CREATE TABLE Shipment (
     weight            DECIMAL(10,2) NOT NULL,
     promised_delivery DATE          NOT NULL,
     departure_id      INT           NULL,
-    CONSTRAINT fk_shipment_shipping_company
-        FOREIGN KEY (shipper_id) REFERENCES ShippingCompany(shipper_id),
+    CONSTRAINT fk_shipment_shipper
+        FOREIGN KEY (shipper_id) REFERENCES Shipper(shipper_id),
     CONSTRAINT fk_shipment_lane
         FOREIGN KEY (origin_hub, destination_hub)
         REFERENCES Lane(origin_hub, destination_hub),

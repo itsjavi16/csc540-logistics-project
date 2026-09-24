@@ -6,8 +6,8 @@ CREATE TABLE Shipment (
     weight            DECIMAL(10,2) NOT NULL,
     promised_delivery DATE          NOT NULL,
     departure_id      INT           NULL,
-    CONSTRAINT fk_shipment_shipping_company
-        FOREIGN KEY (shipper_id) REFERENCES ShippingCompany(shipper_id),
+    CONSTRAINT fk_shipment_shipper
+        FOREIGN KEY (shipper_id) REFERENCES Shipper(shipper_id),
     CONSTRAINT fk_shipment_lane
         FOREIGN KEY (origin_hub, destination_hub)
         REFERENCES Lane(origin_hub, destination_hub),
