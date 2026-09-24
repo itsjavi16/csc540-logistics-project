@@ -3,8 +3,8 @@ CREATE TABLE Vehicle (
     carrier_id   INT     NOT NULL,
     home_hub_id  CHAR(3) NOT NULL,
     vehicle_type ENUM('BOX_TRUCK','REFRIGERATED_VAN','RAIL_CAR') NOT NULL,
-    CONSTRAINT fk_vehicle_carrier
-        FOREIGN KEY (carrier_id) REFERENCES Carrier(carrier_id),
+    CONSTRAINT fk_vehicle_carrier_company
+        FOREIGN KEY (carrier_id) REFERENCES CarrierCompany(carrier_id),
     CONSTRAINT fk_vehicle_home_hub
         FOREIGN KEY (home_hub_id) REFERENCES Hub(hub_id)
         ON UPDATE CASCADE
