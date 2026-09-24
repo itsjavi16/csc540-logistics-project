@@ -10,23 +10,33 @@ CREATE TABLE User (
     role_type     ENUM('SHIPPER','CARRIER','VIEWER') NOT NULL
 );
 
+CREATE TABLE ShippingCompany (
+    shipper_id   INT AUTO_INCREMENT PRIMARY KEY,
+    company_name VARCHAR(100) NOT NULL
+);
+
 CREATE TABLE Shipper (
     user_id    INT PRIMARY KEY,
     shipper_id INT NOT NULL,
     CONSTRAINT fk_shipper_user
-        FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE
+        FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_shipper_company
+        FOREIGN KEY (shipper_id) REFERENCES ShippingCompany(shipper_id)
 );
 
-CREATE INDEX idx_shipper_shipper_id ON Shipper (shipper_id);
+CREATE TABLE CarrierCompany (
+    carrier_id   INT AUTO_INCREMENT PRIMARY KEY,
+    company_name VARCHAR(100) NOT NULL
+);
 
 CREATE TABLE Carrier (
     user_id    INT PRIMARY KEY,
     carrier_id INT NOT NULL,
     CONSTRAINT fk_carrier_user
-        FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE
+        FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_carrier_company
+        FOREIGN KEY (carrier_id) REFERENCES CarrierCompany(carrier_id)
 );
-
-CREATE INDEX idx_carrier_carrier_id ON Carrier (carrier_id);
 
 CREATE TABLE Viewer (
     user_id INT PRIMARY KEY,
@@ -40,7 +50,7 @@ CREATE TABLE Hub (
     region  ENUM('Northeast','Southeast','Midwest','Southwest','West') NOT NULL,
     address VARCHAR(255),
     CONSTRAINT chk_hub_id_format
-        CHECK (BINARY hub_id REGEXP '^[A-Z]{3}$') 
+        CHECK (BINARY hub_id REGEXP '^[A-Z]{3}$')
 );
 
 CREATE TABLE Lane (
@@ -62,8 +72,8 @@ CREATE TABLE Vehicle (
     carrier_id   INT     NOT NULL,
     home_hub_id  CHAR(3) NOT NULL,
     vehicle_type ENUM('BOX_TRUCK','REFRIGERATED_VAN','RAIL_CAR') NOT NULL,
-    CONSTRAINT fk_vehicle_carrier
-        FOREIGN KEY (carrier_id) REFERENCES Carrier(carrier_id),
+    CONSTRAINT fk_vehicle_carrier_company
+        FOREIGN KEY (carrier_id) REFERENCES CarrierCompany(carrier_id),
     CONSTRAINT fk_vehicle_home_hub
         FOREIGN KEY (home_hub_id) REFERENCES Hub(hub_id)
         ON UPDATE CASCADE
@@ -102,7 +112,8 @@ CREATE TABLE RailCar (
 CREATE TABLE Departure (
     departure_id       INT AUTO_INCREMENT PRIMARY KEY,
     vehicle_id         INT           NOT NULL,
-    lane_id            INT           NOT NULL,
+    origin_hub         CHAR(3)       NOT NULL,
+    destination_hub    CHAR(3)       NOT NULL,
     departure_datetime DATETIME      NOT NULL,
     max_weight         DECIMAL(10,2) NOT NULL,
     booked_weight      DECIMAL(10,2) NOT NULL DEFAULT 0,
@@ -110,7 +121,8 @@ CREATE TABLE Departure (
     CONSTRAINT fk_departure_vehicle
         FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id),
     CONSTRAINT fk_departure_lane
-        FOREIGN KEY (lane_id) REFERENCES Lane(lane_id),
+        FOREIGN KEY (origin_hub, destination_hub)
+        REFERENCES Lane(origin_hub, destination_hub),
     CONSTRAINT chk_departure_max_weight_positive
         CHECK (max_weight > 0),
     CONSTRAINT chk_departure_booked_weight_range
@@ -120,14 +132,16 @@ CREATE TABLE Departure (
 CREATE TABLE Shipment (
     shipment_id       INT AUTO_INCREMENT PRIMARY KEY,
     shipper_id        INT           NOT NULL,
-    lane_id           INT           NOT NULL,
+    origin_hub        CHAR(3)       NOT NULL,
+    destination_hub   CHAR(3)       NOT NULL,
     weight            DECIMAL(10,2) NOT NULL,
     promised_delivery DATE          NOT NULL,
     departure_id      INT           NULL,
-    CONSTRAINT fk_shipment_shipper
-        FOREIGN KEY (shipper_id) REFERENCES Shipper(shipper_id),
+    CONSTRAINT fk_shipment_shipping_company
+        FOREIGN KEY (shipper_id) REFERENCES ShippingCompany(shipper_id),
     CONSTRAINT fk_shipment_lane
-        FOREIGN KEY (lane_id) REFERENCES Lane(lane_id),
+        FOREIGN KEY (origin_hub, destination_hub)
+        REFERENCES Lane(origin_hub, destination_hub),
     CONSTRAINT fk_shipment_departure
         FOREIGN KEY (departure_id) REFERENCES Departure(departure_id),
     CONSTRAINT chk_shipment_weight_positive
