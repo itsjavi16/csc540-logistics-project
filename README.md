@@ -7,24 +7,18 @@ Regional logistics carrier database application. Project for CSC 540 (Database A
 ```
 csc540-logistics-project/
 ├── db/
-│   ├── ddl/
-│   ├── procedures/
-│   ├── triggers/
-│   └── seed/
+│   ├── queries/       # required_queries.sql (the six required queries; the app reads this file)
+│   └── ddl/           # Deliverable 1 schema (kept for reference)
 ├── src/
-│   ├── db/
-│   ├── cli/
-│   ├── models/
-│   └── reports/
-├── docs/
-│   ├── er-diagram/
-│   └── deliverable1/
-├── tests/
-├── config/
-│   └── db_config.example.ini
+│   ├── db/            # connection.py, helpers.py
+│   ├── models/        # data layer: all INSERT/UPDATE/SELECT for each screen
+│   ├── reports/       # data layer: report and required-query SQL
+│   └── ui/            # Streamlit screens (no SQL here)
+├── tests/             # manual_connection_test.py
+├── .streamlit/        # Streamlit settings
+├── config/db_config.example.ini
 ├── requirements.txt
-├── environment.yml
-└── .gitignore
+└── environment.yml
 ```
 
 ## Setup
@@ -72,8 +66,20 @@ Edit `config/db_config.ini` with your own `unityid` and password. This file is g
 python -m tests.manual_connection_test
 ```
 
-### 5. Run the CLI
+### 5. Run the application
+
+The database must already have the project schema loaded. Then load the
+official sample data (re-running it resets the demo data):
 
 ```bash
-python -m src.cli.main
+mysql -h classdb2.csc.ncsu.edu -u <unityid> -p <database> < db/seed/sample_data.sql
 ```
+
+Every sample account logs in with its sample id as the User ID (`SH1`–`SH4`,
+`C1`–`C3`, `VW1`) and the password `password`.
+
+```bash
+streamlit run src/ui/app.py
+```
+
+It opens in your browser at http://localhost:8501.
