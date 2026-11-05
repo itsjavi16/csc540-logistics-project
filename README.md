@@ -68,12 +68,15 @@ python -m tests.manual_connection_test
 
 ### 5. Run the application
 
-The database must already have the project schema loaded. Then load the
-official sample data (re-running it resets the demo data):
+First build the database: schema, booking procedure, triggers, then the
+official sample data. Re-running it resets everything to the sample data.
 
 ```bash
-mysql -h classdb2.csc.ncsu.edu -u <unityid> -p <database> < db/seed/sample_data.sql
+python -m db.load_database --reset
 ```
+
+**This deletes all of the project's tables and data** in the database
+`config/db_config.ini` points at, then rebuilds them.
 
 Every sample account logs in with its sample id as the User ID (`SH1`–`SH4`,
 `C1`–`C3`, `VW1`) and the password `password`.
