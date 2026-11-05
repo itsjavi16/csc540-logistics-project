@@ -1,3 +1,5 @@
+-- Uses the old fixed.sql schema as a base
+
 CREATE TABLE User (
     user_id       INT AUTO_INCREMENT PRIMARY KEY,
     username      VARCHAR(50)  NOT NULL UNIQUE,
