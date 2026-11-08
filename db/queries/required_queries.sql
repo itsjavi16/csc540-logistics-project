@@ -97,7 +97,6 @@ SELECT s.shipment_id,
        s.destination_hub,
        s.promised_delivery
 FROM Shipment s
-JOIN Shipper sh ON sh.shipper_id = s.shipper_id
-JOIN User    u  ON u.user_id     = sh.user_id
+JOIN User u ON u.user_id = s.shipper_id
 WHERE NOT EXISTS (SELECT 1 FROM ScanEvent e WHERE e.shipment_id = s.shipment_id)
 ORDER BY s.shipment_id;

@@ -1,15 +1,4 @@
 -- Book Shipment onto Departure (required procedure).
---
--- Usage:
---   CALL book_shipment(shipment_id, departure_id, shipper_id, @ok, @msg);
---   SELECT @ok, @msg;
--- Pass NULL as shipper_id to skip the ownership check (admin / data loading).
---
--- Everything happens in one transaction. The departure row is locked first
--- (SELECT ... FOR UPDATE), so two bookings competing for the same departure
--- run one after the other: the second one waits, then sums the bookings
--- including the first one's, so the departure can never be overbooked.
--- Note: START TRANSACTION commits any transaction the caller left open.
 
 DROP PROCEDURE IF EXISTS book_shipment;
 

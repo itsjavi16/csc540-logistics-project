@@ -1,4 +1,5 @@
--- Uses the old fixed.sql schema as a base
+-- CSC 540 Project 1: tables, constraints and the DepartureLoad view.
+
 
 CREATE TABLE User (
     user_id       INT AUTO_INCREMENT PRIMARY KEY,
@@ -11,7 +12,6 @@ CREATE TABLE User (
 
 CREATE TABLE Shipper (
     user_id    INT PRIMARY KEY,
-    shipper_id INT NOT NULL UNIQUE,
     CONSTRAINT fk_shipper_user
         FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE
 );
@@ -75,7 +75,9 @@ CREATE TABLE BoxTruck (
     gross_weight_rating DECIMAL(10,2) NOT NULL,
     CONSTRAINT fk_boxtruck_vehicle
         FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT chk_boxtruck_positive
+        CHECK (cargo_volume > 0 AND gross_weight_rating > 0)
 );
 
 CREATE TABLE RefrigeratedVan (
@@ -87,7 +89,9 @@ CREATE TABLE RefrigeratedVan (
         FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id)
         ON DELETE CASCADE,
     CONSTRAINT chk_refrigeratedvan_temp_range
-        CHECK (temp_min <= temp_max)
+        CHECK (temp_min <= temp_max),
+    CONSTRAINT chk_refrigeratedvan_payload_positive
+        CHECK (payload_limit > 0)
 );
 
 CREATE TABLE RailCar (
@@ -96,7 +100,9 @@ CREATE TABLE RailCar (
     track_gauge DECIMAL(8,2) NOT NULL,
     CONSTRAINT fk_railcar_vehicle
         FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT chk_railcar_positive
+        CHECK (axle_count > 0 AND track_gauge > 0)
 );
 
 CREATE TABLE Departure (
@@ -105,23 +111,19 @@ CREATE TABLE Departure (
     origin_hub         CHAR(3)       NOT NULL,
     destination_hub    CHAR(3)       NOT NULL,
     departure_datetime DATETIME      NOT NULL,
-    max_weight         DECIMAL(10,2) NOT NULL,
-    #booked_weight      DECIMAL(10,2) NOT NULL DEFAULT 0,
-    #remaining_weight   DECIMAL(10,2) AS (max_weight - booked_weight) VIRTUAL,
+    max_weight         DECIMAL(10,2) NOT NULL,  -- kilograms; booked weight comes from DepartureLoad
     CONSTRAINT fk_departure_vehicle
         FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id),
     CONSTRAINT fk_departure_lane
         FOREIGN KEY (origin_hub, destination_hub)
         REFERENCES Lane(origin_hub, destination_hub),
     CONSTRAINT chk_departure_max_weight_positive
-        CHECK (max_weight > 0) #,
-    #CONSTRAINT chk_departure_booked_weight_range
-    #    CHECK (booked_weight >= 0 AND booked_weight <= max_weight)
+        CHECK (max_weight > 0)
 );
 
 CREATE TABLE Shipment (
     shipment_id       INT AUTO_INCREMENT PRIMARY KEY,
-    shipper_id        INT           NOT NULL,
+    shipper_id        INT           NOT NULL,  -- owning shipper account (Shipper.user_id)
     origin_hub        CHAR(3)       NOT NULL,
     destination_hub   CHAR(3)       NOT NULL,
     weight            DECIMAL(10,2) NOT NULL,
@@ -130,14 +132,17 @@ CREATE TABLE Shipment (
                            'OUT_FOR_DELIVERY','DELIVERED') NOT NULL DEFAULT 'CREATED',
     on_time_outcome   ENUM('ON_TIME','LATE') NULL,
     CONSTRAINT fk_shipment_shipper
-        FOREIGN KEY (shipper_id) REFERENCES Shipper(shipper_id),
+        FOREIGN KEY (shipper_id) REFERENCES Shipper(user_id),
     CONSTRAINT fk_shipment_lane
         FOREIGN KEY (origin_hub, destination_hub)
         REFERENCES Lane(origin_hub, destination_hub),
     CONSTRAINT chk_shipment_weight_positive
-        CHECK (weight > 0)
+        CHECK (weight > 0),
+    CONSTRAINT chk_shipment_outcome_only_when_delivered
+        CHECK (on_time_outcome IS NULL OR current_status = 'DELIVERED')
 );
 
+-- One booking per shipment: shipment_id is the key.
 CREATE TABLE Booking (
     shipment_id  INT PRIMARY KEY,
     departure_id INT NOT NULL,
@@ -149,6 +154,7 @@ CREATE TABLE Booking (
         ON DELETE NO ACTION
 );
 
+-- Weak entity: identified by (shipment_id, scan_seq) and deleted with its shipment.
 CREATE TABLE ScanEvent (
     shipment_id     INT      NOT NULL,
     scan_seq        INT      NOT NULL DEFAULT 0,  -- the trigger fills in the next number
@@ -159,7 +165,7 @@ CREATE TABLE ScanEvent (
     PRIMARY KEY (shipment_id, scan_seq),
     CONSTRAINT fk_scanevent_shipment
         FOREIGN KEY (shipment_id) REFERENCES Shipment(shipment_id)
-        ON DELETE RESTRICT,
+        ON DELETE CASCADE,
     CONSTRAINT fk_scanevent_hub
         FOREIGN KEY (hub_id) REFERENCES Hub(hub_id)
         ON UPDATE CASCADE

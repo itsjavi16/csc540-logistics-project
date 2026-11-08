@@ -87,7 +87,7 @@ def header(title, crumbs=None):
         if u:
             who = u["display_name"]
             extra = u.get("company_name") or (
-                f"Shipper {u['shipper_id']}" if u.get("shipper_id") else ""
+                f"Shipper {u['username']}" if u.get("shipper_id") else ""
             )
             st.caption(
                 f"Logged in as **{who}**"

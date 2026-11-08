@@ -1,4 +1,3 @@
--- =====================================================================
 -- CSC 540 Freight Tracking: official sample data (demo and grading)
 -- Source: "Sample Data for Demo and Testing"
 --
@@ -9,7 +8,7 @@
 --   Sample id   Our column(s)                               Value
 --   ---------   -----------------------------------------   ---------------
 --   C1..C3      CarrierCompany.carrier_id                   1..3
---   SH1..SH4    Shipper.shipper_id                          1..4
+--   SH1..SH4    Shipper.user_id (the shipper account)       4..7
 --   C1, SH1,    User.username (the login "User ID")         'C1', 'SH1', ...
 --   VW1
 --   V101 ...    Vehicle.vehicle_id                          101, 102, ...
@@ -22,15 +21,6 @@
 -- The sample data gives no login accounts. Every sample company gets
 -- one account whose username is its sample id and whose password is
 -- @demo_password below. Passwords are stored as SHA2(password, 256).
---
--- The sample data has no lane list, so Lane holds the five lanes its
--- departures and shipments use.
---
--- Not inserted directly, because the triggers maintain them:
---   Shipment.current_status and Shipment.on_time_outcome come from the
---   scans (trg_scan_status). A shipment is on time if it is delivered by
---   the end of its promised date.
--- =====================================================================
 
 SET @demo_password = 'password';
 
@@ -102,11 +92,11 @@ INSERT INTO Carrier (user_id, carrier_id) VALUES
     (2, 2),
     (3, 3);
 
-INSERT INTO Shipper (user_id, shipper_id) VALUES
-    (4, 1),   -- SH1
-    (5, 2),   -- SH2
-    (6, 3),   -- SH3
-    (7, 4);   -- SH4
+INSERT INTO Shipper (user_id) VALUES
+    (4),      -- SH1
+    (5),      -- SH2
+    (6),      -- SH3
+    (7);      -- SH4
 
 INSERT INTO Viewer (user_id) VALUES
     (8);      -- VW1
@@ -158,30 +148,31 @@ INSERT INTO Departure (departure_id, vehicle_id, origin_hub, destination_hub, de
 -- ---------------------------------------------------------------------
 -- Shipments (weight in kg; promised_delivery = sample "Promised")
 -- ---------------------------------------------------------------------
+-- shipper_id is the owner's user_id: 4 = SH1, 5 = SH2, 6 = SH3
 INSERT INTO Shipment (shipment_id, shipper_id, origin_hub, destination_hub, weight, promised_delivery) VALUES
-    ( 1, 1, 'RDU', 'ATL', 3000, '2026-03-04'),
-    ( 2, 2, 'JFK', 'BOS', 2500, '2026-03-02'),
-    ( 3, 3, 'RDU', 'ATL', 2000, '2026-03-02'),
-    ( 4, 1, 'JFK', 'BOS', 1500, '2026-03-05'),
-    ( 5, 2, 'ATL', 'MIA', 2000, '2026-03-07'),
-    ( 6, 3, 'ATL', 'MIA', 1700, '2026-03-06'),
-    ( 7, 3, 'ORD', 'DFW', 3000, '2026-03-05'),
-    ( 8, 3, 'ORD', 'DFW', 4000, '2026-03-03'),
-    ( 9, 1, 'RDU', 'ATL', 2500, '2026-03-05'),
-    (10, 3, 'RDU', 'ATL', 2800, '2026-03-11'),
-    (11, 2, 'DFW', 'LAX', 3500, '2026-03-05'),
-    (12, 1, 'RDU', 'ATL', 1000, '2026-11-02'),
-    (13, 1, 'RDU', 'ATL', 1000, '2026-11-02'),
-    (14, 1, 'RDU', 'ATL',  500, '2026-11-03'),
-    (15, 1, 'RDU', 'ATL',  500, '2026-11-02'),
-    (16, 1, 'RDU', 'ATL',  500, '2026-10-30'),
-    (17, 1, 'RDU', 'ATL', 1000, '2026-10-31'),
-    (18, 1, 'RDU', 'ATL', 1000, '2026-11-02'),
-    (19, 1, 'RDU', 'ATL', 1000, '2026-11-03'),
-    (20, 1, 'RDU', 'ATL', 1000, '2026-01-11'),
-    (21, 1, 'RDU', 'ATL', 1000, '2026-01-12'),
-    (22, 1, 'RDU', 'ATL', 1000, '2026-02-11'),
-    (23, 1, 'RDU', 'ATL', 1000, '2026-02-12');
+    ( 1, 4, 'RDU', 'ATL', 3000, '2026-03-04'),
+    ( 2, 5, 'JFK', 'BOS', 2500, '2026-03-02'),
+    ( 3, 6, 'RDU', 'ATL', 2000, '2026-03-02'),
+    ( 4, 4, 'JFK', 'BOS', 1500, '2026-03-05'),
+    ( 5, 5, 'ATL', 'MIA', 2000, '2026-03-07'),
+    ( 6, 6, 'ATL', 'MIA', 1700, '2026-03-06'),
+    ( 7, 6, 'ORD', 'DFW', 3000, '2026-03-05'),
+    ( 8, 6, 'ORD', 'DFW', 4000, '2026-03-03'),
+    ( 9, 4, 'RDU', 'ATL', 2500, '2026-03-05'),
+    (10, 6, 'RDU', 'ATL', 2800, '2026-03-11'),
+    (11, 5, 'DFW', 'LAX', 3500, '2026-03-05'),
+    (12, 4, 'RDU', 'ATL', 1000, '2026-11-02'),
+    (13, 4, 'RDU', 'ATL', 1000, '2026-11-02'),
+    (14, 4, 'RDU', 'ATL',  500, '2026-11-03'),
+    (15, 4, 'RDU', 'ATL',  500, '2026-11-02'),
+    (16, 4, 'RDU', 'ATL',  500, '2026-10-30'),
+    (17, 4, 'RDU', 'ATL', 1000, '2026-10-31'),
+    (18, 4, 'RDU', 'ATL', 1000, '2026-11-02'),
+    (19, 4, 'RDU', 'ATL', 1000, '2026-11-03'),
+    (20, 4, 'RDU', 'ATL', 1000, '2026-01-11'),
+    (21, 4, 'RDU', 'ATL', 1000, '2026-01-12'),
+    (22, 4, 'RDU', 'ATL', 1000, '2026-02-11'),
+    (23, 4, 'RDU', 'ATL', 1000, '2026-02-12');
 
 -- ---------------------------------------------------------------------
 -- Bookings (sample "Booked on"). S14 is unbooked, so it has no row.

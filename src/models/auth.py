@@ -12,7 +12,7 @@ def login(user_id_or_name, password, role):
     user_id or the username. Passwords are stored as SHA2(password, 256).
 
     The returned dict always has user_id, username, display_name, role, and:
-      - shipper_id for a SHIPPER (the id Shipment.shipper_id uses)
+      - shipper_id for a SHIPPER: the shipper's own user_id (Shipment.shipper_id)
       - carrier_id and company_name for a CARRIER (the company that owns vehicles)
     """
     if role not in ROLES:
@@ -23,7 +23,7 @@ def login(user_id_or_name, password, role):
 
     user = fetch_one(
         """SELECT u.user_id, u.username, u.display_name, u.role_type AS role,
-                  sh.shipper_id, c.carrier_id, cc.company_name
+                  sh.user_id AS shipper_id, c.carrier_id, cc.company_name
            FROM User u
            LEFT JOIN Shipper sh        ON sh.user_id = u.user_id
            LEFT JOIN Carrier c         ON c.user_id = u.user_id
