@@ -7,8 +7,12 @@ Regional logistics carrier database application. Project for CSC 540 (Database A
 ```
 csc540-logistics-project/
 ├── db/
+│   ├── ddl/           # schema.sql (tables, constraints, DepartureLoad view)
+│   ├── procedures/    # book_shipment.sql (the booking stored procedure)
+│   ├── triggers/      # triggers.sql (scan and guard triggers)
+│   ├── seed/          # sample_data.sql (the official sample data)
 │   ├── queries/       # required_queries.sql (the six required queries; the app reads this file)
-│   └── ddl/           # Deliverable 1 schema (kept for reference)
+│   └── load_database.py  # builds the database from the four files above
 ├── src/
 │   ├── db/            # connection.py, helpers.py
 │   ├── models/        # data layer: all INSERT/UPDATE/SELECT for each screen
