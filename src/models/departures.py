@@ -76,6 +76,21 @@ def update_departure(carrier_id, departure_id, vehicle_id, origin_hub, destinati
     )
 
 
+def list_carrier_bookings(carrier_id):
+    """Shipments booked on the carrier's departures (helps pick a shipment + departure for a scan)."""
+    return fetch_all(
+        """SELECT b.departure_id, b.shipment_id, s.origin_hub, s.destination_hub, s.weight,
+                  s.current_status, s.promised_delivery
+           FROM Booking b
+           JOIN Departure d ON d.departure_id = b.departure_id
+           JOIN Vehicle v   ON v.vehicle_id = d.vehicle_id
+           JOIN Shipment s  ON s.shipment_id = b.shipment_id
+           WHERE v.carrier_id = %s
+           ORDER BY b.departure_id, b.shipment_id""",
+        (carrier_id,),
+    )
+
+
 def list_departures(carrier_id):
     return fetch_all(
         """SELECT d.departure_id, d.vehicle_id, v.vehicle_type, d.origin_hub, d.destination_hub,

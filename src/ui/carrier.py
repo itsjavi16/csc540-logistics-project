@@ -5,7 +5,6 @@
 import streamlit as st
 
 from src.models import departures, vehicles
-from src.models.hubs import list_hubs, list_lanes
 from src.models.scans import STATUSES, post_scan
 from src.reports import carrier_reports
 from src.ui.common import (
@@ -35,8 +34,8 @@ def landing():
     header("Carrier: Landing", BASE)
     menu(
         [
-            ("Manage Vehicles", "carrier_vehicles"),
-            ("Manage Departures", "carrier_departures"),
+            ("Vehicles", "carrier_vehicles"),
+            ("Departures", "carrier_departures"),
             ("Post Scan Event", "carrier_scan"),
             ("Reports", "carrier_reports"),
             ("Logout", None),
@@ -49,7 +48,7 @@ def landing():
 
 def manage_vehicles():
     require_role(ROLE)
-    header("Carrier: Manage Vehicles", BASE + ["Manage Vehicles"])
+    header("Carrier: Vehicles", BASE + ["Vehicles"])
     menu(
         [
             ("Add New Vehicle", "carrier_vehicle_add"),
@@ -63,8 +62,7 @@ def manage_vehicles():
 
 def add_vehicle():
     u = require_role(ROLE)
-    header("Carrier: Add New Vehicle", BASE + ["Manage Vehicles", "Add New Vehicle"])
-    reference("Hubs", db_call(list_hubs))
+    header("Carrier: Add New Vehicle", BASE + ["Vehicles", "Add New Vehicle"])
     with st.form("vehicle_common"):
         vid_text = st.text_input(
             "A. Vehicle ID", key="in_vid", help="Leave blank to have one assigned."
@@ -133,7 +131,7 @@ def vehicle_details():
     name = vehicles.TYPES[pending["vehicle_type"]]
     header(
         f"Carrier: Add {name} Details",
-        BASE + ["Manage Vehicles", "Add New Vehicle", f"{name} Details"],
+        BASE + ["Vehicles", "Add New Vehicle", f"{name} Details"],
     )
     st.caption(
         f"Vehicle {pending['vehicle_id'] or '(new ID)'} · home hub {pending['home_hub_id']}"
@@ -169,7 +167,7 @@ def vehicle_details():
 
 def update_vehicle():
     u = require_role(ROLE)
-    header("Carrier: Update Vehicle", BASE + ["Manage Vehicles", "Update Vehicle"])
+    header("Carrier: Update Vehicle", BASE + ["Vehicles", "Update Vehicle"])
     reference("Your vehicles", db_call(vehicles.list_vehicles, u["carrier_id"]))
     vid_text = st.text_input("A. Vehicle ID", key="in_vid")
     v = None
@@ -221,6 +219,18 @@ def update_vehicle():
                         go("carrier_vehicles")
                         st.rerun()
                     show_result(res)
+        with st.expander("Delete this vehicle"):
+            st.caption(
+                "Removes the vehicle and its type details from your fleet. "
+                "A vehicle that is assigned to departures can't be deleted."
+            )
+            if st.button(f"Delete vehicle {v['vehicle_id']}", key=f"del_{v['vehicle_id']}"):
+                res = db_call(vehicles.delete_vehicle, u["carrier_id"], v["vehicle_id"])
+                if res.ok:
+                    flash(res)
+                    go("carrier_vehicles")
+                    st.rerun()
+                show_result(res)
     nav_buttons(
         [("3. GoBack", "carrier_vehicles"), ("4. LandingPage", "carrier_landing")]
     )
@@ -228,7 +238,7 @@ def update_vehicle():
 
 def view_vehicles():
     u = require_role(ROLE)
-    header("Carrier: View Vehicles", BASE + ["Manage Vehicles", "View Vehicles"])
+    header("Carrier: View Vehicles", BASE + ["Vehicles", "View Vehicles"])
     table(
         db_call(vehicles.list_vehicles, u["carrier_id"]),
         empty="Your company has no vehicles yet.",
@@ -243,7 +253,7 @@ def view_vehicles():
 
 def manage_departures():
     require_role(ROLE)
-    header("Carrier: Manage Departures", BASE + ["Manage Departures"])
+    header("Carrier: Departures", BASE + ["Departures"])
     menu(
         [
             ("Schedule Departure", "carrier_dep_schedule"),
@@ -257,14 +267,13 @@ def manage_departures():
 
 def _departure_refs(u):
     reference("Your vehicles", db_call(vehicles.list_vehicles, u["carrier_id"]))
-    reference("Lanes (valid origin -> destination pairs)", db_call(list_lanes))
 
 
 def schedule_departure():
     u = require_role(ROLE)
     header(
         "Carrier: Schedule Departure",
-        BASE + ["Manage Departures", "Schedule Departure"],
+        BASE + ["Departures", "Schedule Departure"],
     )
     _departure_refs(u)
     with st.form("schedule_form"):
@@ -297,7 +306,7 @@ def schedule_departure():
 def update_departure():
     u = require_role(ROLE)
     header(
-        "Carrier: Update Departure", BASE + ["Manage Departures", "Update Departure"]
+        "Carrier: Update Departure", BASE + ["Departures", "Update Departure"]
     )
     st.caption(
         "Capacity can't go below the weight already booked, and the lane can't change once shipments are booked."
@@ -366,7 +375,7 @@ def update_departure():
 
 def view_departures():
     u = require_role(ROLE)
-    header("Carrier: View Departures", BASE + ["Manage Departures", "View Departures"])
+    header("Carrier: View Departures", BASE + ["Departures", "View Departures"])
     table(
         db_call(departures.list_departures, u["carrier_id"]),
         {
@@ -398,6 +407,19 @@ def post_scan_screen():
         "Received → In Transit → Arrived at Hub → Out for Delivery → Delivered."
     )
     reference("Your departures", db_call(departures.list_departures, u["carrier_id"]))
+    reference(
+        "Shipments booked on your departures",
+        db_call(departures.list_carrier_bookings, u["carrier_id"]),
+        {
+            "departure_id": "Departure",
+            "shipment_id": "Shipment",
+            "origin_hub": "Origin",
+            "destination_hub": "Destination",
+            "weight": "Weight (kg)",
+            "current_status": "Current status",
+            "promised_delivery": "Promised",
+        },
+    )
     with st.form("scan_form"):
         sid_text = st.text_input("A. Shipment ID", key="in_sid")
         did_text = st.text_input("B. Departure ID", key="in_did")

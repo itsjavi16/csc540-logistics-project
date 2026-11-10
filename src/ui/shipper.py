@@ -3,7 +3,6 @@
 import streamlit as st
 
 from src.models import shipments
-from src.models.hubs import list_hubs, list_lanes
 from src.reports import shipper_reports
 from src.ui.common import (
     check_range,
@@ -32,7 +31,7 @@ def landing():
     header("Shipper: Landing", BASE)
     menu(
         [
-            ("Manage Shipments", "shipper_manage"),
+            ("Shipments", "shipper_manage"),
             ("Reports", "shipper_reports"),
             ("Logout", None),
         ]
@@ -41,7 +40,7 @@ def landing():
 
 def manage():
     require_role(ROLE)
-    header("Shipper: Manage Shipments", BASE + ["Manage Shipments"])
+    header("Shipper: Shipments", BASE + ["Shipments"])
     menu(
         [
             ("Create Shipment", "shipper_create"),
@@ -54,11 +53,6 @@ def manage():
     )
 
 
-def _lane_reference():
-    reference("Hubs", db_call(list_hubs))
-    reference("Lanes (valid origin -> destination pairs)", db_call(list_lanes))
-
-
 def _my_shipments(u):
     reference(
         "Your shipments", db_call(shipments.list_shipper_shipments, u["shipper_id"])
@@ -67,8 +61,7 @@ def _my_shipments(u):
 
 def create():
     u = require_role(ROLE)
-    header("Shipper: Create Shipment", BASE + ["Manage Shipments", "Create Shipment"])
-    _lane_reference()
+    header("Shipper: Create Shipment", BASE + ["Shipments", "Create Shipment"])
     with st.form("create_form"):
         origin = hub_input("A. Origin Hub ID", "in_origin")
         dest = hub_input("B. Destination Hub ID", "in_dest")
@@ -93,12 +86,11 @@ def create():
 
 def update():
     u = require_role(ROLE)
-    header("Shipper: Update Shipment", BASE + ["Manage Shipments", "Update Shipment"])
+    header("Shipper: Update Shipment", BASE + ["Shipments", "Update Shipment"])
     st.caption(
         "Lane and weight can't change once a shipment is booked; the promised date can't change after delivery."
     )
     _my_shipments(u)
-    _lane_reference()
 
     sid_text = st.text_input("A. Shipment ID", key="in_sid")
     sid, err = parse_id(sid_text, "shipment ID") if sid_text else (None, None)
@@ -155,7 +147,7 @@ def book():
     u = require_role(ROLE)
     header(
         "Shipper: Book Shipment onto Departure",
-        BASE + ["Manage Shipments", "Book Shipment"],
+        BASE + ["Shipments", "Book Shipment"],
     )
     st.caption(
         "A departure is eligible when its origin and destination match the shipment's and it has room "
@@ -175,10 +167,25 @@ def book():
             st.write(
                 f"Shipment {sid}: {owned['origin_hub']} → {owned['destination_hub']}, {owned['weight']} kg"
             )
-            reference(
-                "Eligible departures for this shipment",
-                db_call(shipments.eligible_departures, sid),
-            )
+            eligible = db_call(shipments.eligible_departures, sid)
+            if eligible:
+                st.markdown("**Eligible departures** (matching route, enough capacity; earliest first)")
+                table(
+                    eligible,
+                    {
+                        "departure_id": "Departure",
+                        "origin_hub": "Origin",
+                        "destination_hub": "Destination",
+                        "departure_datetime": "Departs",
+                        "max_weight": "Capacity (kg)",
+                        "booked_weight": "Booked (kg)",
+                        "remaining_weight": "Remaining (kg)",
+                    },
+                )
+            else:
+                st.warning(
+                    "No departures available with a matching route and sufficient weight capacity for this shipment."
+                )
 
     did_text = st.text_input("B. Departure ID", key="in_did")
     if st.button("1. Book", type="primary"):
@@ -199,7 +206,7 @@ def book():
 
 def track():
     u = require_role(ROLE)
-    header("Shipper: Track Shipment", BASE + ["Manage Shipments", "Track Shipment"])
+    header("Shipper: Track Shipment", BASE + ["Shipments", "Track Shipment"])
     _my_shipments(u)
     sid_text = st.text_input("A. Shipment ID", key="in_sid")
     if st.button("1. View History", type="primary"):

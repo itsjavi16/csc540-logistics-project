@@ -32,6 +32,8 @@ def check_new_vehicle(carrier_id, vehicle_id, home_hub_id, vehicle_type):
             return "Vehicle ID must be a positive number."
         if fetch_one("SELECT 1 AS x FROM Vehicle WHERE vehicle_id = %s", (vehicle_id,)):
             return f"Vehicle ID {vehicle_id} is already taken."
+    if not home_hub_id:
+        return "Choose a home hub."
     if not hub_exists(home_hub_id):
         return f"Hub {home_hub_id} doesn't exist."
     if vehicle_type not in TYPES:
@@ -101,6 +103,8 @@ def get_owned_vehicle(carrier_id, vehicle_id):
 def update_home_hub(carrier_id, vehicle_id, home_hub_id):
     if get_owned_vehicle(carrier_id, vehicle_id) is None:
         return Result(False, f"Vehicle {vehicle_id} doesn't exist or isn't yours.")
+    if not home_hub_id:
+        return Result(False, "Choose a home hub.")
     if not hub_exists(home_hub_id):
         return Result(False, f"Hub {home_hub_id} doesn't exist.")
     return run_write(
@@ -123,6 +127,22 @@ def update_type_details(carrier_id, vehicle_id, details):
         [(f"UPDATE {table} SET {', '.join(f'{c} = %s' for c in col_names)} WHERE vehicle_id = %s",
           (*[details[c] for c in col_names], vehicle_id))],
         f"{TYPES[v['vehicle_type']]} {vehicle_id} details updated.",
+    )
+
+
+def delete_vehicle(carrier_id, vehicle_id):
+    """Remove one of the carrier's vehicles; its BoxTruck/RefrigeratedVan/RailCar row
+    goes with it (ON DELETE CASCADE). A vehicle with departures can't be deleted
+    (fk_departure_vehicle blocks it), so say so plainly first."""
+    v = get_owned_vehicle(carrier_id, vehicle_id)
+    if v is None:
+        return Result(False, f"Vehicle {vehicle_id} doesn't exist or isn't yours.")
+    n = fetch_one("SELECT COUNT(*) AS n FROM Departure WHERE vehicle_id = %s", (vehicle_id,))["n"]
+    if n:
+        return Result(False, f"Vehicle {vehicle_id} can't be deleted: it is assigned to {n} departure(s).")
+    return run_write(
+        [("DELETE FROM Vehicle WHERE vehicle_id = %s AND carrier_id = %s", (vehicle_id, carrier_id))],
+        f"{TYPES[v['vehicle_type']]} {vehicle_id} deleted.",
     )
 
 

@@ -3,7 +3,7 @@
 # Navigation follows "Project Application Flow": each screen is a page name in st.session_state["page"], and the buttons on a screen (GoBack, LandingPage,
 # Cancel, Logout) move between them. No SQL lives in the UI; every screen calls functions in src/models or src/reports.
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 import pandas as pd
@@ -11,6 +11,7 @@ import pymysql
 import streamlit as st
 
 from src.db.helpers import friendly_error
+from src.models.hubs import list_hubs
 
 STATUS_LABELS = {
     "CREATED": "Created",
@@ -144,11 +145,18 @@ def parse_id(text, what):
     return int(t), None
 
 
-def hub_input(label, key, value=""):
-    return (
-        st.text_input(label, key=key, value=value, max_chars=3, placeholder="e.g. RDU")
-        .strip()
-        .upper()
+def hub_input(label, key, value=None):
+    # Hub dropdown: shows "RDU - Raleigh Hub (Southeast)", returns the hub ID (None until chosen)
+    hubs = db_call(list_hubs)
+    ids = [h["hub_id"] for h in hubs]
+    names = {h["hub_id"]: f"{h['hub_id']} - {h['name']} ({h['region']})" for h in hubs}
+    return st.selectbox(
+        label,
+        ids,
+        index=ids.index(value) if value in ids else None,
+        format_func=names.get,
+        placeholder="Choose a hub",
+        key=key,
     )
 
 
@@ -188,6 +196,9 @@ def datetime_inputs(label, key, default=None):
 def _clean(v):
     if isinstance(v, Decimal):
         return float(v)
+    if isinstance(v, timedelta):  # e.g. TIMEDIFF results: show hours:minutes, like 1:05
+        total = int(v.total_seconds())
+        return f"{total // 3600}:{total % 3600 // 60:02d}"
     if isinstance(v, str) and v in STATUS_LABELS:
         return STATUS_LABELS[v]
     return v

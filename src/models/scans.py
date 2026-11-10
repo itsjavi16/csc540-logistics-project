@@ -20,6 +20,8 @@ def post_scan(carrier_id, shipment_id, departure_id, timestamp, hub_id, status):
         return Result(False, "Choose a valid status.")
     if not isinstance(timestamp, datetime):
         return Result(False, "Enter a valid timestamp.")
+    if not hub_id:
+        return Result(False, "Choose the hub where the shipment was scanned.")
 
     dep = fetch_one(
         """SELECT d.departure_id FROM Departure d JOIN Vehicle v ON v.vehicle_id = d.vehicle_id
