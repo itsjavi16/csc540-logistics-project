@@ -18,7 +18,7 @@ csc540-logistics-project/
 │   ├── models/        # data layer: all INSERT/UPDATE/SELECT for each screen
 │   ├── reports/       # data layer: report and required-query SQL
 │   └── ui/            # Streamlit screens (no SQL here)
-├── tests/             # manual_connection_test.py
+├── tests/             # manual_connection_test.py, test_application_flow.py
 ├── .streamlit/        # Streamlit settings
 ├── config/db_config.example.ini
 ├── requirements.txt
@@ -90,3 +90,12 @@ streamlit run src/ui/app.py
 ```
 
 It opens in your browser at http://localhost:8501.
+
+### 6. Test every Application Flow page (optional)
+
+```bash
+python -m tests.test_application_flow --reset
+```
+
+Clicks through every page of the Application Flow and prints PASS/FAIL for each
+check. It resets the database to the sample data before and after.

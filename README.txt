@@ -53,15 +53,15 @@ Run every command from the project folder (the folder with this file).
 
      python -m db.load_database --reset
 
-   WARNING: this drops this project's tables, view, procedure and triggers
+   WARNING: this drops this project's tables, views, procedure and triggers
    in the database from step 2, then recreates them. It runs, in order:
 
-     db/ddl/schema.sql                 tables, constraints, DepartureLoad view
+     db/ddl/schema.sql                 tables, constraints, views
      db/procedures/book_shipment.sql   booking stored procedure
      db/triggers/triggers.sql          scan and guard triggers
      db/seed/sample_data.sql           official sample data
 
-   It ends by printing row counts. Expected: 11 hubs, 5 lanes, 8 users,
+   It ends by printing row counts. Expected: 11 hubs, 8 users,
    7 vehicles, 10 departures, 23 shipments, 22 bookings, 69 scan events.
    Run it again at any time to reset to the original sample data.
 
@@ -77,6 +77,17 @@ Your browser opens http://localhost:8501 (open it yourself if it doesn't).
 To stop the application, press Ctrl+C in the terminal.
 
 If port 8501 is busy:  streamlit run src/ui/app.py --server.port 8502
+
+
+Testing (optional)
+------------------
+     python -m tests.test_application_flow --reset
+
+Walks the app through every page of the Project Application Flow (logins,
+create/update/book shipments, vehicles, departures, scans, every report) and
+prints PASS/FAIL for each check, about 111 in all. Every accept/reject comes
+from the database (procedure, triggers, constraints). It resets the database
+to the sample data before and after, so the data ends where it started.
 
 
 Logins (sample data)
@@ -102,7 +113,8 @@ The sample ids keep their number and drop their letters:
      C1 -> carrier_id 1      SH1 -> user_id 4         V101 -> vehicle_id 101
      D1 -> departure_id 1    S1  -> shipment_id 1
 "Booked on" became rows in Booking (S14 is unbooked). "Seq" is
-ScanEvent.scan_seq. Lane holds the five lanes the sample departures use.
+ScanEvent.scan_seq. Lanes aren't stored: any two different hubs can be an
+origin and destination, and the LaneView view lists the pairs in use.
 Shipment status and on-time/late are not inserted: the scan triggers compute
 them from the scans. New records created in the app continue after the
 sample ids (the next shipment is 24, the next departure is 11).
@@ -110,7 +122,8 @@ sample ids (the next shipment is 24, the next departure is 11).
 
 Project files
 -------------
-  db/ddl/schema.sql               tables, constraints, view
+  db/ddl/schema.sql               tables, constraints, views (DepartureLoad,
+                                  LaneView, LaneOnTime)
   db/procedures/book_shipment.sql stored procedure (atomic booking)
   db/triggers/triggers.sql        triggers (scan chronology, status/late flag,
                                   booking, departure and shipment guards)
@@ -118,6 +131,7 @@ Project files
   db/queries/required_queries.sql the six required queries (the app reads
                                   this file for "View Queries")
   db/load_database.py             builds the database (setup step 4)
+  tests/test_application_flow.py  end-to-end test of every Application Flow page
   src/ui/                         screens (start: src/ui/app.py)
   src/models/, src/reports/       data layer: every SQL statement the app runs
   src/db/                         connection and helpers
