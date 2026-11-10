@@ -40,7 +40,6 @@ CREATE TABLE Hub (
     hub_id  CHAR(3)      PRIMARY KEY,
     name    VARCHAR(100) NOT NULL,
     region  ENUM('Northeast','Southeast','Midwest','Southwest','West') NOT NULL,
-    address VARCHAR(255),
     CONSTRAINT chk_hub_id_format
         CHECK (BINARY hub_id REGEXP '^[A-Z]{3}$')
 );
