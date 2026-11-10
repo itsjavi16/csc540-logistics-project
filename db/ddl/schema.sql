@@ -44,18 +44,6 @@ CREATE TABLE Hub (
         CHECK (BINARY hub_id REGEXP '^[A-Z]{3}$')
 );
 
-CREATE TABLE Lane (
-    origin_hub      CHAR(3) NOT NULL,
-    destination_hub CHAR(3) NOT NULL,
-    PRIMARY KEY (origin_hub, destination_hub),
-    CONSTRAINT fk_lane_origin_hub
-        FOREIGN KEY (origin_hub) REFERENCES Hub(hub_id),
-    CONSTRAINT fk_lane_destination_hub
-        FOREIGN KEY (destination_hub) REFERENCES Hub(hub_id),
-    CONSTRAINT chk_lane_hubs_distinct
-        CHECK (origin_hub <> destination_hub)
-);
-
 CREATE TABLE Vehicle (
     vehicle_id   INT AUTO_INCREMENT PRIMARY KEY,
     carrier_id   INT     NOT NULL,
@@ -113,16 +101,19 @@ CREATE TABLE Departure (
     max_weight         DECIMAL(10,2) NOT NULL,  -- kilograms; booked weight comes from DepartureLoad
     CONSTRAINT fk_departure_vehicle
         FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id),
-    CONSTRAINT fk_departure_lane
-        FOREIGN KEY (origin_hub, destination_hub)
-        REFERENCES Lane(origin_hub, destination_hub),
+    CONSTRAINT fk_departure_origin_hub
+        FOREIGN KEY (origin_hub) REFERENCES Hub(hub_id),
+    CONSTRAINT fk_departure_destination_hub
+        FOREIGN KEY (destination_hub) REFERENCES Hub(hub_id),
+    CONSTRAINT chk_departure_hubs_distinct
+        CHECK (origin_hub <> destination_hub),
     CONSTRAINT chk_departure_max_weight_positive
         CHECK (max_weight > 0)
 );
 
 CREATE TABLE Shipment (
     shipment_id       INT AUTO_INCREMENT PRIMARY KEY,
-    shipper_id        INT           NOT NULL,  -- owning shipper account (Shipper.user_id)
+    user_id           INT           NOT NULL,  -- owning shipper account (Shipper.user_id)
     origin_hub        CHAR(3)       NOT NULL,
     destination_hub   CHAR(3)       NOT NULL,
     weight            DECIMAL(10,2) NOT NULL,
@@ -131,10 +122,13 @@ CREATE TABLE Shipment (
                            'OUT_FOR_DELIVERY','DELIVERED') NOT NULL DEFAULT 'CREATED',
     on_time_outcome   ENUM('ON_TIME','LATE') NULL,
     CONSTRAINT fk_shipment_shipper
-        FOREIGN KEY (shipper_id) REFERENCES Shipper(user_id),
-    CONSTRAINT fk_shipment_lane
-        FOREIGN KEY (origin_hub, destination_hub)
-        REFERENCES Lane(origin_hub, destination_hub),
+        FOREIGN KEY (user_id) REFERENCES Shipper(user_id),
+    CONSTRAINT fk_shipment_origin_hub
+        FOREIGN KEY (origin_hub) REFERENCES Hub(hub_id),
+    CONSTRAINT fk_shipment_destination_hub
+        FOREIGN KEY (destination_hub) REFERENCES Hub(hub_id),
+    CONSTRAINT chk_shipment_hubs_distinct
+        CHECK (origin_hub <> destination_hub),
     CONSTRAINT chk_shipment_weight_positive
         CHECK (weight > 0),
     CONSTRAINT chk_shipment_outcome_only_when_delivered
@@ -179,3 +173,28 @@ FROM Departure d
 LEFT JOIN Booking  b ON b.departure_id = d.departure_id
 LEFT JOIN Shipment s ON s.shipment_id  = b.shipment_id
 GROUP BY d.departure_id, d.max_weight;
+
+-- Lanes are not stored: any two different hubs can be an origin and a
+-- destination. This view lists the origin -> destination pairs in use.
+CREATE VIEW LaneView AS
+SELECT origin_hub, destination_hub FROM Departure
+UNION
+SELECT origin_hub, destination_hub FROM Shipment;
+
+-- On-time rate per lane (origin -> destination), per delivery date.
+-- Only delivered shipments count: a shipment without a DELIVERED scan is
+-- neither on time nor late, so it is left out of the rate.
+-- on_time_pct = shipments with on_time_outcome = 'ON_TIME' / delivered shipments.
+-- The "On-Time Rates by Lane" report sums the rows in its date range.
+CREATE VIEW LaneOnTime AS
+SELECT s.origin_hub,
+       s.destination_hub,
+       DATE(e.`timestamp`)                                        AS delivery_date,
+       COUNT(*)                                                   AS delivered,
+       SUM(s.on_time_outcome = 'ON_TIME')                         AS on_time,
+       SUM(s.on_time_outcome = 'LATE')                            AS late,
+       ROUND(100 * SUM(s.on_time_outcome = 'ON_TIME') / COUNT(*), 1) AS on_time_pct
+FROM Shipment s
+JOIN ScanEvent e ON e.shipment_id = s.shipment_id
+                AND e.shipment_status = 'DELIVERED'
+GROUP BY s.origin_hub, s.destination_hub, DATE(e.`timestamp`);

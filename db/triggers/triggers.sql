@@ -150,7 +150,7 @@ CREATE TRIGGER trg_shipment_guard
 BEFORE UPDATE ON Shipment
 FOR EACH ROW
 BEGIN
-    IF NEW.shipper_id <> OLD.shipper_id THEN
+    IF NEW.user_id <> OLD.user_id THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'A shipment''s owner can''t be changed.';
     END IF;
 

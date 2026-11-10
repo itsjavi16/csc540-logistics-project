@@ -81,22 +81,22 @@ ORDER BY cc.carrier_id, w.week_start;
 -- 5. Departures carrying shipments belonging to at least two different
 --    shippers, with the number of distinct shippers.
 SELECT b.departure_id,
-       COUNT(DISTINCT s.shipper_id) AS distinct_shippers
+       COUNT(DISTINCT s.user_id) AS distinct_shippers
 FROM Booking b
 JOIN Shipment s ON s.shipment_id = b.shipment_id
 GROUP BY b.departure_id
-HAVING COUNT(DISTINCT s.shipper_id) >= 2
+HAVING COUNT(DISTINCT s.user_id) >= 2
 ORDER BY b.departure_id;
 
 -- 6. Shipments with no scan events recorded: shipment ID, owning shipper,
 --    origin hub, destination hub, promised delivery date.
 SELECT s.shipment_id,
-       s.shipper_id,
+       s.user_id AS shipper_user_id,
        u.display_name AS shipper_name,
        s.origin_hub,
        s.destination_hub,
        s.promised_delivery
 FROM Shipment s
-JOIN User u ON u.user_id = s.shipper_id
+JOIN User u ON u.user_id = s.user_id
 WHERE NOT EXISTS (SELECT 1 FROM ScanEvent e WHERE e.shipment_id = s.shipment_id)
 ORDER BY s.shipment_id;

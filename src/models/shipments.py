@@ -29,7 +29,7 @@ def create_shipment(shipper_id, origin_hub, destination_hub, weight, promised_de
     if promised_delivery is None:
         return Result(False, "Enter a promised delivery date.")
     res = run_write(
-        [("""INSERT INTO Shipment (shipper_id, origin_hub, destination_hub, weight, promised_delivery)
+        [("""INSERT INTO Shipment (user_id, origin_hub, destination_hub, weight, promised_delivery)
              VALUES (%s, %s, %s, %s, %s)""",
           (shipper_id, origin_hub, destination_hub, w, promised_delivery))],
         "Shipment created.",
@@ -42,9 +42,9 @@ def create_shipment(shipper_id, origin_hub, destination_hub, weight, promised_de
 def get_owned_shipment(shipper_id, shipment_id):
     """The shipment if it exists and belongs to this shipper, else None."""
     return fetch_one(
-        """SELECT shipment_id, shipper_id, origin_hub, destination_hub, weight,
+        """SELECT shipment_id, user_id, origin_hub, destination_hub, weight,
                   promised_delivery, current_status, on_time_outcome
-           FROM Shipment WHERE shipment_id = %s AND shipper_id = %s""",
+           FROM Shipment WHERE shipment_id = %s AND user_id = %s""",
         (shipment_id, shipper_id),
     )
 
@@ -65,7 +65,7 @@ def update_shipment(shipper_id, shipment_id, origin_hub, destination_hub, weight
     return run_write(
         [("""UPDATE Shipment
              SET origin_hub = %s, destination_hub = %s, weight = %s, promised_delivery = %s
-             WHERE shipment_id = %s AND shipper_id = %s""",
+             WHERE shipment_id = %s AND user_id = %s""",
           (origin_hub, destination_hub, w, promised_delivery, shipment_id, shipper_id))],
         f"Shipment {shipment_id} updated.",
     )
@@ -77,7 +77,7 @@ def list_shipper_shipments(shipper_id):
                   s.current_status, s.on_time_outcome, b.departure_id
            FROM Shipment s
            LEFT JOIN Booking b ON b.shipment_id = s.shipment_id
-           WHERE s.shipper_id = %s
+           WHERE s.user_id = %s
            ORDER BY s.shipment_id""",
         (shipper_id,),
     )
@@ -117,7 +117,7 @@ def book_shipment(shipper_id, shipment_id, departure_id):
 def get_shipment(shipment_id):
     """Shipment header for tracking (any role)."""
     return fetch_one(
-        """SELECT s.shipment_id, s.shipper_id, s.origin_hub, s.destination_hub, s.weight,
+        """SELECT s.shipment_id, s.user_id, s.origin_hub, s.destination_hub, s.weight,
                   s.promised_delivery, s.current_status, s.on_time_outcome, b.departure_id
            FROM Shipment s LEFT JOIN Booking b ON b.shipment_id = s.shipment_id
            WHERE s.shipment_id = %s""",

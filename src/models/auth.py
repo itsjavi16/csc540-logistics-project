@@ -12,7 +12,7 @@ def login(user_id_or_name, password, role):
     user_id or the username. Passwords are stored as SHA2(password, 256).
 
     The returned dict always has user_id, username, display_name, role, and:
-      - shipper_id for a SHIPPER: the shipper's own user_id (Shipment.shipper_id)
+      - shipper_id for a SHIPPER: the shipper's own user_id (Shipment.user_id)
       - carrier_id and company_name for a CARRIER (the company that owns vehicles)
     """
     if role not in ROLES:

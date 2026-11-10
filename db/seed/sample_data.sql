@@ -37,7 +37,6 @@ DELETE FROM BoxTruck;
 DELETE FROM RefrigeratedVan;
 DELETE FROM RailCar;
 DELETE FROM Vehicle;
-DELETE FROM Lane;
 DELETE FROM Hub;
 DELETE FROM Shipper;
 DELETE FROM Carrier;
@@ -60,14 +59,6 @@ INSERT INTO Hub (hub_id, name, region) VALUES
     ('PHX', 'Phoenix Hub',     'Southwest'),
     ('LAX', 'Los Angeles Hub', 'West'),
     ('SEA', 'Seattle Hub',     'West');
-
--- Lanes used by the sample departures and shipments
-INSERT INTO Lane (origin_hub, destination_hub) VALUES
-    ('RDU', 'ATL'),
-    ('ATL', 'MIA'),
-    ('JFK', 'BOS'),
-    ('ORD', 'DFW'),
-    ('DFW', 'LAX');
 
 -- ---------------------------------------------------------------------
 -- Carriers, shippers and viewers
@@ -148,8 +139,8 @@ INSERT INTO Departure (departure_id, vehicle_id, origin_hub, destination_hub, de
 -- ---------------------------------------------------------------------
 -- Shipments (weight in kg; promised_delivery = sample "Promised")
 -- ---------------------------------------------------------------------
--- shipper_id is the owner's user_id: 4 = SH1, 5 = SH2, 6 = SH3
-INSERT INTO Shipment (shipment_id, shipper_id, origin_hub, destination_hub, weight, promised_delivery) VALUES
+-- user_id is the owning shipper account: 4 = SH1, 5 = SH2, 6 = SH3
+INSERT INTO Shipment (shipment_id, user_id, origin_hub, destination_hub, weight, promised_delivery) VALUES
     ( 1, 4, 'RDU', 'ATL', 3000, '2026-03-04'),
     ( 2, 5, 'JFK', 'BOS', 2500, '2026-03-02'),
     ( 3, 6, 'RDU', 'ATL', 2000, '2026-03-02'),
@@ -292,11 +283,10 @@ ALTER TABLE Shipment       AUTO_INCREMENT = 24;
 COMMIT;
 
 -- ---------------------------------------------------------------------
--- Quick check: expected counts are 11 hubs, 5 lanes, 8 users, 7 vehicles,
+-- Quick check: expected counts are 11 hubs, 8 users, 7 vehicles,
 -- 10 departures, 23 shipments, 22 bookings, 69 scans.
 -- ---------------------------------------------------------------------
 SELECT 'Hub' AS table_name, COUNT(*) AS row_count FROM Hub
-UNION ALL SELECT 'Lane',      COUNT(*) FROM Lane
 UNION ALL SELECT 'User',      COUNT(*) FROM User
 UNION ALL SELECT 'Vehicle',   COUNT(*) FROM Vehicle
 UNION ALL SELECT 'Departure', COUNT(*) FROM Departure

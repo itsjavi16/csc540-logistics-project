@@ -45,6 +45,8 @@ TABLES = [
 def reset(cur):
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
     cur.execute("DROP VIEW IF EXISTS DepartureLoad")
+    cur.execute("DROP VIEW IF EXISTS LaneView")
+    cur.execute("DROP VIEW IF EXISTS LaneOnTime")
     cur.execute("DROP PROCEDURE IF EXISTS book_shipment")
     for t in TABLES:  # dropping a table also drops its triggers
         cur.execute(f"DROP TABLE IF EXISTS `{t}`")

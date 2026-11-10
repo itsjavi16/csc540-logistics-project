@@ -45,7 +45,7 @@ proc: BEGIN
     END IF;
 
     -- 2. Lock and read the shipment.
-    SELECT shipper_id, origin_hub, destination_hub, weight, current_status
+    SELECT user_id, origin_hub, destination_hub, weight, current_status
       INTO v_owner, v_ship_origin, v_ship_dest, v_weight, v_status
       FROM Shipment
      WHERE shipment_id = p_shipment_id

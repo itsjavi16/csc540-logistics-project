@@ -23,17 +23,22 @@ _DELIVERED = """
 
 
 def on_time_by_lane(start_date, end_date):
+    """On-time and late rates per lane for shipments delivered in the period.
+
+    Adds up the LaneOnTime view's per-day rows in the date range, then divides:
+    on-time % = on-time deliveries / all deliveries on that lane.
+    """
     return fetch_all(
-        f"""WITH delivered AS ({_DELIVERED})
-            SELECT origin_hub, destination_hub,
-                   COUNT(*) AS delivered,
-                   SUM(on_time_outcome = 'ON_TIME') AS on_time,
-                   SUM(on_time_outcome = 'LATE') AS late,
-                   ROUND(100 * SUM(on_time_outcome = 'ON_TIME') / COUNT(*), 1) AS on_time_pct,
-                   ROUND(100 * SUM(on_time_outcome = 'LATE') / COUNT(*), 1) AS late_pct
-            FROM delivered
-            GROUP BY origin_hub, destination_hub
-            ORDER BY origin_hub, destination_hub""",
+        """SELECT origin_hub, destination_hub,
+                  SUM(delivered) AS delivered,
+                  SUM(on_time) AS on_time,
+                  SUM(late) AS late,
+                  ROUND(100 * SUM(on_time) / SUM(delivered), 1) AS on_time_pct,
+                  ROUND(100 * SUM(late) / SUM(delivered), 1) AS late_pct
+           FROM LaneOnTime
+           WHERE delivery_date BETWEEN %s AND %s
+           GROUP BY origin_hub, destination_hub
+           ORDER BY origin_hub, destination_hub""",
         (start_date, end_date),
     )
 
@@ -123,7 +128,7 @@ def at_risk_in_transit(n_days, as_of=None):
     """All in-transit shipments whose promised date has passed or is within n days."""
     as_of = as_of or date.today()
     return fetch_all(
-        """SELECT s.shipment_id, s.shipper_id, s.origin_hub, s.destination_hub, s.promised_delivery,
+        """SELECT s.shipment_id, s.user_id AS shipper_user_id, s.origin_hub, s.destination_hub, s.promised_delivery,
                   DATEDIFF(s.promised_delivery, %s) AS days_left, s.current_status, b.departure_id
            FROM Shipment s LEFT JOIN Booking b ON b.shipment_id = s.shipment_id
            WHERE s.current_status <> 'DELIVERED'

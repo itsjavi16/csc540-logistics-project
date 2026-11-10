@@ -60,7 +60,8 @@ def run_write(statements, success_message):
 # Constraint names from the DDL -> what to tell the user.
 _CHECK_MESSAGES = {
     "chk_hub_id_format": "Hub IDs are three capital letters, e.g. RDU.",
-    "chk_lane_hubs_distinct": "Origin and destination must be different hubs.",
+    "chk_departure_hubs_distinct": "Origin and destination must be different hubs.",
+    "chk_shipment_hubs_distinct": "Origin and destination must be different hubs.",
     "chk_departure_max_weight_positive": "Capacity must be greater than 0.",
     "chk_shipment_weight_positive": "Weight must be greater than 0.",
     "chk_refrigeratedvan_temp_range": "Minimum temperature can't be above the maximum.",
@@ -69,8 +70,10 @@ _CHECK_MESSAGES = {
 }
 
 _FK_MESSAGES = {
-    "fk_shipment_lane": "That origin/destination pair isn't a lane in the network.",
-    "fk_departure_lane": "That origin/destination pair isn't a lane in the network.",
+    "fk_shipment_origin_hub": "That origin hub doesn't exist.",
+    "fk_shipment_destination_hub": "That destination hub doesn't exist.",
+    "fk_departure_origin_hub": "That origin hub doesn't exist.",
+    "fk_departure_destination_hub": "That destination hub doesn't exist.",
     "fk_vehicle_home_hub": "That home hub doesn't exist.",
     "fk_scanevent_hub": "That hub doesn't exist.",
     "fk_departure_vehicle": "That vehicle doesn't exist.",
