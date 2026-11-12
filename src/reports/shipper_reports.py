@@ -30,7 +30,7 @@ def in_transit(shipper_id):
         """SELECT s.shipment_id, s.origin_hub, s.destination_hub, s.weight, s.promised_delivery,
                   s.current_status, b.departure_id
            FROM Shipment s LEFT JOIN Booking b ON b.shipment_id = s.shipment_id
-           WHERE s.user_id = %s AND s.current_status <> 'DELIVERED'
+           WHERE s.user_id = %s AND s.current_status = 'IN_TRANSIT'
            ORDER BY s.promised_delivery, s.shipment_id""",
         (shipper_id,),
     )

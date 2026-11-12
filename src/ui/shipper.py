@@ -301,7 +301,7 @@ def rep_ontime():
 def rep_transit():
     u = require_role(ROLE)
     header("Shipper: In-Transit Shipments", BASE + ["Reports", "In-Transit"])
-    st.caption("Your shipments that have not reached Delivered.")
+    st.caption("Your shipments whose current status is In Transit.")
     table(
         db_call(shipper_reports.in_transit, u["shipper_id"]),
         empty="None of your shipments are in transit.",

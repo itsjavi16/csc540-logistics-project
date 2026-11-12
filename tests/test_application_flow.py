@@ -239,8 +239,9 @@ def run_checks():
     P = "Shipper: In-Transit Shipments"
     t = df(at)
     ids = sorted(int(x) for x in t.iloc[:, 0]) if t is not None else []
-    check(P, "lists only SH1's not-delivered shipments (4,12,13,14,15,16,17,18,19,24)",
-          ids == [4, 12, 13, 14, 15, 16, 17, 18, 19, 24], ids)
+    statuses = set(t["Current status"]) if t is not None else set()
+    check(P, "lists only SH1's shipments with status In Transit (4, 16, 17, 18, 19)",
+          ids == [4, 16, 17, 18, 19] and statuses == {"In Transit"}, (ids, statuses))
     press(at, "GoBack")
 
     press(at, "Shipments Near Promise Date")
