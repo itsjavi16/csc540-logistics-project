@@ -42,6 +42,12 @@ Run every command from the project folder (the folder with this file).
      conda env create -f environment.yml
      conda activate csc540-logistics
 
+   If conda stops with "Pip failed", the environment was still created.
+   Finish it with:
+
+     conda activate csc540-logistics
+     pip install -r requirements.txt
+
    or, with any Python 3.10+ (a virtual environment is recommended):
 
      pip install -r requirements.txt
