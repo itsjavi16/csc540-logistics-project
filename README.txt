@@ -101,8 +101,8 @@ If port 8501 is busy:  streamlit run src/ui/app.py --server.port 8502
 
 Logins (sample data)
 --------------------
-Every account's User ID is its id from the sample data. All passwords are:
-password
+Sign in with the account's id from the sample data (SH1, C1, VW1, ...) as
+the User ID. All passwords are:  password
 
      Role      User ID       Name
      Shipper   SH1 .. SH4    Triangle Textiles, Oak City Electronics,
@@ -118,9 +118,19 @@ is needed.
 
 How the sample data was mapped
 ------------------------------
-The sample ids keep their number and drop their letters:
-     C1 -> carrier_id 1      SH1 -> user_id 4         V101 -> vehicle_id 101
-     D1 -> departure_id 1    S1  -> shipment_id 1
+Accounts: each sample id (C1, SH1, VW1, ...) is stored as User.username,
+which is what you type at login. Each account also gets a numeric user_id,
+the key the other tables use, numbered in order:
+
+     Sample ids   username     user_id   Also
+     C1 .. C3     C1 .. C3     1 .. 3    Carrier.carrier_id 1 .. 3
+     SH1 .. SH4   SH1 .. SH4   4 .. 7    Shipper.user_id, Shipment.user_id
+     VW1          VW1          8         Viewer.user_id
+
+(The login screen also accepts the numeric user_id, so SH1 and 4 both work.)
+
+Everything else keeps its number and drops its letters:
+     V101 -> vehicle_id 101    D1 -> departure_id 1    S1 -> shipment_id 1
 "Booked on" became rows in Booking (S14 is unbooked). "Seq" is
 ScanEvent.scan_seq. Lanes aren't stored: any two different hubs can be an
 origin and destination, and the LaneView view lists the pairs in use.
