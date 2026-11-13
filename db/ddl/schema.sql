@@ -98,7 +98,7 @@ CREATE TABLE Departure (
     origin_hub         CHAR(3)       NOT NULL,
     destination_hub    CHAR(3)       NOT NULL,
     departure_datetime DATETIME      NOT NULL,
-    max_weight         DECIMAL(10,2) NOT NULL,  -- kilograms; booked weight comes from DepartureLoad
+    max_weight         DECIMAL(10,2) NOT NULL, 
     CONSTRAINT fk_departure_vehicle
         FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id),
     CONSTRAINT fk_departure_origin_hub
@@ -113,7 +113,7 @@ CREATE TABLE Departure (
 
 CREATE TABLE Shipment (
     shipment_id       INT AUTO_INCREMENT PRIMARY KEY,
-    user_id           INT           NOT NULL,  -- owning shipper account (Shipper.user_id)
+    user_id           INT           NOT NULL, 
     origin_hub        CHAR(3)       NOT NULL,
     destination_hub   CHAR(3)       NOT NULL,
     weight            DECIMAL(10,2) NOT NULL,
@@ -135,7 +135,7 @@ CREATE TABLE Shipment (
         CHECK (on_time_outcome IS NULL OR current_status = 'DELIVERED')
 );
 
--- One booking per shipment: shipment_id is the key.
+
 CREATE TABLE Booking (
     shipment_id  INT PRIMARY KEY,
     departure_id INT NOT NULL,
@@ -147,10 +147,10 @@ CREATE TABLE Booking (
         ON DELETE NO ACTION
 );
 
--- Weak entity: identified by (shipment_id, scan_seq) and deleted with its shipment.
+-- weak entity identified by (shipment_id, scan_seq) and deleted with its shipment.
 CREATE TABLE ScanEvent (
     shipment_id     INT      NOT NULL,
-    scan_seq        INT      NOT NULL DEFAULT 0,  -- the trigger fills in the next number
+    scan_seq        INT      NOT NULL DEFAULT 0, 
     timestamp       DATETIME NOT NULL,
     hub_id          CHAR(3)  NOT NULL,
     shipment_status ENUM('RECEIVED','IN_TRANSIT','ARRIVED_AT_HUB',
@@ -174,18 +174,13 @@ LEFT JOIN Booking  b ON b.departure_id = d.departure_id
 LEFT JOIN Shipment s ON s.shipment_id  = b.shipment_id
 GROUP BY d.departure_id, d.max_weight;
 
--- Lanes are not stored: any two different hubs can be an origin and a
--- destination. This view lists the origin -> destination pairs in use.
+
 CREATE VIEW LaneView AS
 SELECT origin_hub, destination_hub FROM Departure
 UNION
 SELECT origin_hub, destination_hub FROM Shipment;
 
--- On-time rate per lane (origin -> destination), per delivery date.
--- Only delivered shipments count: a shipment without a DELIVERED scan is
--- neither on time nor late, so it is left out of the rate.
--- on_time_pct = shipments with on_time_outcome = 'ON_TIME' / delivered shipments.
--- The "On-Time Rates by Lane" report sums the rows in its date range.
+
 CREATE VIEW LaneOnTime AS
 SELECT s.origin_hub,
        s.destination_hub,

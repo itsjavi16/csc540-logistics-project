@@ -1,13 +1,12 @@
--- Triggers. The first two are the ones the project requires; the others
--- move business rules from the application into the database.
---
+-- Triggers
+
 --   trg_scan_chronology     (required) ScanEvent BEFORE INSERT
 --   trg_scan_status         (required) ScanEvent AFTER INSERT
 --   trg_booking_guard       Booking    BEFORE INSERT
 --   trg_departure_guard     Departure  BEFORE UPDATE
 --   trg_shipment_guard      Shipment   BEFORE UPDATE
 --
--- Errors use SQLSTATE 45000; the message text is meant to be shown to the user.
+
 
 DROP TRIGGER IF EXISTS trg_scan_chronology;
 DROP TRIGGER IF EXISTS trg_scan_status;

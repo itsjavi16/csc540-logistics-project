@@ -1,23 +1,5 @@
 -- CSC 540 Freight Tracking: official sample data (demo and grading)
--- Source: "Sample Data for Demo and Testing"
---
--- Run this AFTER the schema (tables, view, procedure, triggers) is loaded.
--- It first empties every table, so it can be re-run to reset the demo.
---
--- How the sample ids map to our schema
---   Sample id   Our column(s)                               Value
---   ---------   -----------------------------------------   ---------------
---   C1..C3      CarrierCompany.carrier_id                   1..3
---   SH1..SH4    Shipper.user_id (the shipper account)       4..7
---   C1, SH1,    User.username (the login "User ID")         'C1', 'SH1', ...
---   VW1
---   V101 ...    Vehicle.vehicle_id                          101, 102, ...
---   D1..D10     Departure.departure_id                      1..10
---   S1..S23     Shipment.shipment_id                        1..23
---   Booked on   Booking(shipment_id, departure_id)          (S14 has no row)
---   Seq         ScanEvent.scan_seq                          1, 2, 3, 4
---   received... ScanEvent.shipment_status                   'RECEIVED', ...
---
+
 -- The sample data gives no login accounts. Every sample company gets
 -- one account whose username is its sample id and whose password is
 -- @demo_password below. Passwords are stored as SHA2(password, 256).
@@ -26,9 +8,9 @@ SET @demo_password = 'password';
 
 START TRANSACTION;
 
--- ---------------------------------------------------------------------
+
 -- Reset (children first, so foreign keys are never violated)
--- ---------------------------------------------------------------------
+
 DELETE FROM ScanEvent;
 DELETE FROM Booking;
 DELETE FROM Shipment;
@@ -44,9 +26,9 @@ DELETE FROM Viewer;
 DELETE FROM CarrierCompany;
 DELETE FROM User;
 
--- ---------------------------------------------------------------------
+
 -- Hubs and regions
--- ---------------------------------------------------------------------
+
 INSERT INTO Hub (hub_id, name, region) VALUES
     ('RDU', 'Raleigh Hub',     'Southeast'),
     ('ATL', 'Atlanta Hub',     'Southeast'),
@@ -60,9 +42,8 @@ INSERT INTO Hub (hub_id, name, region) VALUES
     ('LAX', 'Los Angeles Hub', 'West'),
     ('SEA', 'Seattle Hub',     'West');
 
--- ---------------------------------------------------------------------
 -- Carriers, shippers and viewers
--- ---------------------------------------------------------------------
+
 INSERT INTO CarrierCompany (carrier_id, company_name) VALUES
     (1, 'Piedmont Freight Lines'),   -- C1
     (2, 'Atlantic Coast Haulers'),   -- C2
@@ -92,9 +73,9 @@ INSERT INTO Shipper (user_id) VALUES
 INSERT INTO Viewer (user_id) VALUES
     (8);      -- VW1
 
--- ---------------------------------------------------------------------
+
 -- Vehicles (supertype row, then the subtype row with its attributes)
--- ---------------------------------------------------------------------
+
 INSERT INTO Vehicle (vehicle_id, carrier_id, home_hub_id, vehicle_type) VALUES
     (101, 1, 'RDU', 'BOX_TRUCK'),
     (102, 1, 'ATL', 'REFRIGERATED_VAN'),
@@ -120,10 +101,10 @@ INSERT INTO RefrigeratedVan (vehicle_id, temp_min, temp_max, payload_limit) VALU
 INSERT INTO RailCar (vehicle_id, axle_count, track_gauge) VALUES
     (301, 4, 1435);
 
--- ---------------------------------------------------------------------
+
 -- Departures (max_weight = sample "Capacity (kg)")
 -- The carrier comes from the vehicle (Vehicle.carrier_id).
--- ---------------------------------------------------------------------
+
 INSERT INTO Departure (departure_id, vehicle_id, origin_hub, destination_hub, departure_datetime, max_weight) VALUES
     ( 1, 101, 'RDU', 'ATL', '2026-03-01 22:00:00', 10000),
     ( 2, 102, 'ATL', 'MIA', '2026-03-04 06:00:00',  4000),
@@ -136,10 +117,10 @@ INSERT INTO Departure (departure_id, vehicle_id, origin_hub, destination_hub, de
     ( 9, 101, 'RDU', 'ATL', '2026-01-10 09:00:00', 10000),
     (10, 101, 'RDU', 'ATL', '2026-02-10 09:00:00', 10000);
 
--- ---------------------------------------------------------------------
+
 -- Shipments (weight in kg; promised_delivery = sample "Promised")
--- ---------------------------------------------------------------------
 -- user_id is the owning shipper account: 4 = SH1, 5 = SH2, 6 = SH3
+
 INSERT INTO Shipment (shipment_id, user_id, origin_hub, destination_hub, weight, promised_delivery) VALUES
     ( 1, 4, 'RDU', 'ATL', 3000, '2026-03-04'),
     ( 2, 5, 'JFK', 'BOS', 2500, '2026-03-02'),
@@ -165,21 +146,21 @@ INSERT INTO Shipment (shipment_id, user_id, origin_hub, destination_hub, weight,
     (22, 4, 'RDU', 'ATL', 1000, '2026-02-11'),
     (23, 4, 'RDU', 'ATL', 1000, '2026-02-12');
 
--- ---------------------------------------------------------------------
+
 -- Bookings (sample "Booked on"). S14 is unbooked, so it has no row.
 -- trg_booking_guard checks each one: same lane, within capacity.
--- ---------------------------------------------------------------------
+
 INSERT INTO Booking (shipment_id, departure_id) VALUES
     ( 1,  1), ( 2,  3), ( 3,  1), ( 4,  3), ( 5,  2), ( 6,  2),
     ( 7,  4), ( 8,  4), ( 9,  1), (10,  6), (11,  5), (12,  7),
     (13,  7), (15,  8), (16,  8), (17,  8), (18,  8), (19,  8),
     (20,  9), (21,  9), (22, 10), (23, 10);
 
--- ---------------------------------------------------------------------
+
 -- Scan events, in order within each shipment.
 -- trg_scan_chronology checks the order; trg_scan_status updates
 -- Shipment.current_status and sets on_time_outcome on delivery.
--- ---------------------------------------------------------------------
+
 INSERT INTO ScanEvent (shipment_id, scan_seq, shipment_status, hub_id, `timestamp`) VALUES
     ( 1, 1, 'RECEIVED',         'RDU', '2026-03-01 21:00:00'),
     ( 1, 2, 'IN_TRANSIT',       'RDU', '2026-03-01 22:05:00'),
@@ -273,7 +254,7 @@ INSERT INTO ScanEvent (shipment_id, scan_seq, shipment_status, hub_id, `timestam
     (23, 4, 'DELIVERED',        'ATL', '2026-02-13 11:00:00');
 
 -- New rows the app creates (new shipments, departures, vehicles, users)
--- continue after the sample ids.
+
 ALTER TABLE User           AUTO_INCREMENT = 9;
 ALTER TABLE CarrierCompany AUTO_INCREMENT = 4;
 ALTER TABLE Vehicle        AUTO_INCREMENT = 302;
@@ -282,10 +263,9 @@ ALTER TABLE Shipment       AUTO_INCREMENT = 24;
 
 COMMIT;
 
--- ---------------------------------------------------------------------
--- Quick check: expected counts are 11 hubs, 8 users, 7 vehicles,
+-- sanity check: expected counts are 11 hubs, 8 users, 7 vehicles,
 -- 10 departures, 23 shipments, 22 bookings, 69 scans.
--- ---------------------------------------------------------------------
+
 SELECT 'Hub' AS table_name, COUNT(*) AS row_count FROM Hub
 UNION ALL SELECT 'User',      COUNT(*) FROM User
 UNION ALL SELECT 'Vehicle',   COUNT(*) FROM Vehicle

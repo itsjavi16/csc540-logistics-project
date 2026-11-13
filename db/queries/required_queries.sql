@@ -1,9 +1,7 @@
--- The six required queries, numbered as in "Queries to be Implemented".
--- Queries with a parameter read it from a session variable set just above
--- them; change the value and rerun. The app runs the same SQL with the
--- variable replaced by a %s placeholder.
+-- Queries to be Implemented
 
--- 1. Number of vehicles of each type owned by each carrier.
+-- 1. Show the number of vehicles of each type owned by each carrier.
+
 SELECT cc.carrier_id,
        cc.company_name,
        v.vehicle_type,
@@ -13,9 +11,8 @@ JOIN Vehicle v ON v.carrier_id = cc.carrier_id
 GROUP BY cc.carrier_id, cc.company_name, v.vehicle_type
 ORDER BY cc.carrier_id, v.vehicle_type;
 
--- 2. For each lane, rank departures by weight utilization (booked weight as a
---    percentage of maximum weight) and list the most heavily loaded ones.
---    Parameter: how many departures to list per lane.
+-- 2. For each lane, rank departures by weight utilization (booked weight as a percentage of maximum weight), and list the most heavily loaded departures per lane.
+
 SET @top_n = 3;
 
 WITH dep_load AS (
@@ -36,9 +33,8 @@ FROM ranked
 WHERE lane_rank <= @top_n
 ORDER BY origin_hub, destination_hub, lane_rank, departure_id;
 
--- 3. For a given shipment, the time elapsed between each consecutive pair of
---    scan events (dwell time at each step of its journey).
---    Parameter: the shipment.
+-- 3. For a given shipment, compute the time elapsed between each consecutive pair of scan events (the dwell time at each step of its journey).
+
 SET @shipment_id = 1;
 
 SELECT scan_seq,
@@ -51,8 +47,8 @@ FROM ScanEvent
 WHERE shipment_id = @shipment_id
 ORDER BY scan_seq;
 
--- 4. For each carrier, a running total of shipment weight delivered over
---    time: cumulative delivered kilograms by week (weeks start on Monday).
+-- 4. For each carrier, compute a running total of shipment weight delivered over time (for example, cumulative delivered kilograms by week).
+
 WITH delivered AS (
     SELECT v.carrier_id, s.weight, e.`timestamp` AS delivered_at
     FROM ScanEvent e
@@ -78,8 +74,7 @@ FROM weekly w
 JOIN CarrierCompany cc ON cc.carrier_id = w.carrier_id
 ORDER BY cc.carrier_id, w.week_start;
 
--- 5. Departures carrying shipments belonging to at least two different
---    shippers, with the number of distinct shippers.
+-- 5. Find departures carrying shipments belonging to at least two different shippers. Show the departure ID and the number of distinct shippers. 
 SELECT b.departure_id,
        COUNT(DISTINCT s.user_id) AS distinct_shippers
 FROM Booking b
@@ -88,8 +83,8 @@ GROUP BY b.departure_id
 HAVING COUNT(DISTINCT s.user_id) >= 2
 ORDER BY b.departure_id;
 
--- 6. Shipments with no scan events recorded: shipment ID, owning shipper,
---    origin hub, destination hub, promised delivery date.
+-- 6. List shipments that have no scan events recorded. Include the shipment ID, owning shipper, origin hub, destination hub, and promised delivery date.
+
 SELECT s.shipment_id,
        s.user_id AS shipper_user_id,
        u.display_name AS shipper_name,
