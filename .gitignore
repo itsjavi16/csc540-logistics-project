@@ -19,3 +19,10 @@ __pycache__/
 
 # vscode workspace settings
 *.code-workspace
+
+# Submission package and the script that builds it
+submission/
+build_submission.py
+
+# Local end-to-end test, not part of the submission
+tests/test_application_flow.py
