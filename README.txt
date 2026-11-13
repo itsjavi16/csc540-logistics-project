@@ -12,8 +12,17 @@ What this is
 A Python (PyMySQL, no ORM) application on MariaDB 10.5
 (classdb2.csc.ncsu.edu). The menu-driven interface is a small Streamlit web
 page that runs on your own computer. Every screen follows the Project
-Application Flow, with the same numbered options and menus. All SQL lives in
-src/models and src/reports; the screens in src/ui contain no SQL.
+Application Flow, with the same numbered options and menus.
+
+The database is defined by three SQL files in the sql folder:
+
+  sql/1_create_tables_triggers_procedures.sql   tables, constraints, views,
+                                                stored procedure, triggers
+  sql/2_insert_sample_data.sql                  the official sample data
+  sql/3_required_queries.sql                    the Queries to be Implemented
+
+The application's own SQL lives in src/models and src/reports; the screens in
+src/ui contain no SQL.
 
 
 Requirements
@@ -56,38 +65,38 @@ Run every command from the project folder (the folder with this file).
    WARNING: this drops this project's tables, views, procedure and triggers
    in the database from step 2, then recreates them. It runs, in order:
 
-     db/ddl/schema.sql                 tables, constraints, views
-     db/procedures/book_shipment.sql   booking stored procedure
-     db/triggers/triggers.sql          scan and guard triggers
-     db/seed/sample_data.sql           official sample data
+     sql/1_create_tables_triggers_procedures.sql
+     sql/2_insert_sample_data.sql
 
    It ends by printing row counts. Expected: 11 hubs, 8 users,
    7 vehicles, 10 departures, 23 shipments, 22 bookings, 69 scan events.
    Run it again at any time to reset to the original sample data.
 
-   (Alternative with the mysql/mariadb client: run the four files above,
-   in that order, with  mysql -h classdb2.csc.ncsu.edu -u <user> -p <db> < file)
+   Alternative with the mysql/mariadb client (same result):
+
+     mysql -h classdb2.csc.ncsu.edu -u <user> -p <db> < sql/1_create_tables_triggers_procedures.sql
+     mysql -h classdb2.csc.ncsu.edu -u <user> -p <db> < sql/2_insert_sample_data.sql
+
+   and to run the six required queries:
+
+     mysql -h classdb2.csc.ncsu.edu -u <user> -p <db> < sql/3_required_queries.sql
 
 
 Running the application
 -----------------------
+Start it with the launcher for your system:
+
+     Windows:        run_app.bat        (double-click it, or run it from cmd)
+     macOS / Linux:  bash run_app.sh
+
+or with the command they run:
+
      streamlit run src/ui/app.py
 
 Your browser opens http://localhost:8501 (open it yourself if it doesn't).
 To stop the application, press Ctrl+C in the terminal.
 
 If port 8501 is busy:  streamlit run src/ui/app.py --server.port 8502
-
-
-Testing (optional)
-------------------
-     python -m tests.test_application_flow --reset
-
-Walks the app through every page of the Project Application Flow (logins,
-create/update/book shipments, vehicles, departures, scans, every report) and
-prints PASS/FAIL for each check, about 111 in all. Every accept/reject comes
-from the database (procedure, triggers, constraints). It resets the database
-to the sample data before and after, so the data ends where it started.
 
 
 Logins (sample data)
@@ -122,16 +131,18 @@ sample ids (the next shipment is 24, the next departure is 11).
 
 Project files
 -------------
-  db/ddl/schema.sql               tables, constraints, views (DepartureLoad,
-                                  LaneView, LaneOnTime)
-  db/procedures/book_shipment.sql stored procedure (atomic booking)
-  db/triggers/triggers.sql        triggers (scan chronology, status/late flag,
-                                  booking, departure and shipment guards)
-  db/seed/sample_data.sql         sample data inserts
-  db/queries/required_queries.sql the six required queries (the app reads
+  sql/1_create_tables_triggers_procedures.sql
+                                  tables, constraints, views (DepartureLoad,
+                                  LaneView, LaneOnTime), stored procedure
+                                  book_shipment (atomic booking), triggers
+                                  (scan chronology, status/late flag, booking,
+                                  departure and shipment guards)
+  sql/2_insert_sample_data.sql    sample data inserts
+  sql/3_required_queries.sql      the six required queries (the app reads
                                   this file for "View Queries")
+  run_app.bat, run_app.sh         start the application
   db/load_database.py             builds the database (setup step 4)
-  tests/test_application_flow.py  end-to-end test of every Application Flow page
+  tests/manual_connection_test.py checks the database login (setup step 3)
   src/ui/                         screens (start: src/ui/app.py)
   src/models/, src/reports/       data layer: every SQL statement the app runs
   src/db/                         connection and helpers
