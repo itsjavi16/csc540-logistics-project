@@ -1,8 +1,8 @@
-"""Hubs and lanes: lookups used to validate input and fill reference tables.
+# Hubs and lanes: lookups used to validate input and fill reference tables.
 
-Lanes are not stored: any two different hubs form a valid origin -> destination
-pair. LaneView lists the pairs currently used by departures and shipments.
-"""
+# Lanes are not stored: any two different hubs form a valid origin -> destination
+# pair. LaneView lists the pairs currently used by departures and shipments.
+
 
 from src.db.helpers import fetch_all, fetch_one
 
@@ -16,11 +16,12 @@ def hub_exists(hub_id):
 
 
 def list_lanes():
-    return fetch_all("SELECT origin_hub, destination_hub FROM LaneView ORDER BY origin_hub, destination_hub")
+    return fetch_all(
+        "SELECT origin_hub, destination_hub FROM LaneView ORDER BY origin_hub, destination_hub"
+    )
 
 
 def check_lane(origin_hub, destination_hub):
-    """Return an error message, or None if the pair is valid (two different, existing hubs)."""
     if not origin_hub or not destination_hub:
         return "Choose both an origin and a destination hub."
     if origin_hub == destination_hub:

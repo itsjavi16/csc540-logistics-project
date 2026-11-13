@@ -169,7 +169,9 @@ def book():
             )
             eligible = db_call(shipments.eligible_departures, sid)
             if eligible:
-                st.markdown("**Eligible departures** (matching route, enough capacity; earliest first)")
+                st.markdown(
+                    "**Eligible departures** (matching route, enough capacity; earliest first)"
+                )
                 table(
                     eligible,
                     {
@@ -223,7 +225,6 @@ def track():
 
 
 def show_history(sid):
-    # Current status and full scan history (also used by the Viewer)
     s = db_call(shipments.get_shipment, sid)
     if s is None:
         st.error(f"Shipment {sid} doesn't exist.")

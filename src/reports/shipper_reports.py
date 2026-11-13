@@ -1,7 +1,5 @@
-"""Shipper reports. Every query is limited to the logged-in shipper's shipments.
+# Shipper reports. Every query is limited to the logged-in shipper's shipments.
 
-"In transit" follows the spec: a shipment with no delivering scan yet is
-still in transit, so it means any status other than DELIVERED."""
 
 from datetime import date
 
@@ -10,7 +8,6 @@ from src.reports.common import pct
 
 
 def on_time_summary(shipper_id, start_date, end_date):
-    """Counts and percentages of on-time vs. late deliveries, by delivery date."""
     row = fetch_one(
         """SELECT COUNT(*) AS delivered,
                   COALESCE(SUM(s.on_time_outcome = 'ON_TIME'), 0) AS on_time,
@@ -37,7 +34,6 @@ def in_transit(shipper_id):
 
 
 def near_promise_date(shipper_id, n_days, as_of=None):
-    """In-transit shipments whose promised date has passed or is within the next n days."""
     as_of = as_of or date.today()
     return fetch_all(
         """SELECT s.shipment_id, s.origin_hub, s.destination_hub, s.promised_delivery,

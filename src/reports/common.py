@@ -1,10 +1,10 @@
-"""Report pieces shared by several roles."""
+# Report pieces shared by several roles
 
 from src.db.helpers import fetch_all
 
 
 def dwell_time(shipment_id):
-    """Time between each consecutive pair of scans for one shipment (window function LAG)."""
+    # Time between each consecutive pair of scans for one shipment (window function LAG)
     return fetch_all(
         """SELECT scan_seq,
                   `timestamp`,

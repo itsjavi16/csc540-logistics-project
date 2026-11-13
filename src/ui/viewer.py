@@ -1,4 +1,4 @@
-# Viewer screens (Project Application Flow: "Viewer pages")
+# Viewer screens
 
 import streamlit as st
 

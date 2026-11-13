@@ -1,4 +1,4 @@
-"""Shipper actions: create, update, book and track shipments."""
+# Shipper actions: create, update, book and track shipments
 
 from decimal import Decimal, InvalidOperation
 
@@ -29,9 +29,13 @@ def create_shipment(shipper_id, origin_hub, destination_hub, weight, promised_de
     if promised_delivery is None:
         return Result(False, "Enter a promised delivery date.")
     res = run_write(
-        [("""INSERT INTO Shipment (user_id, origin_hub, destination_hub, weight, promised_delivery)
+        [
+            (
+                """INSERT INTO Shipment (user_id, origin_hub, destination_hub, weight, promised_delivery)
              VALUES (%s, %s, %s, %s, %s)""",
-          (shipper_id, origin_hub, destination_hub, w, promised_delivery))],
+                (shipper_id, origin_hub, destination_hub, w, promised_delivery),
+            )
+        ],
         "Shipment created.",
     )
     if res.ok:
@@ -40,7 +44,6 @@ def create_shipment(shipper_id, origin_hub, destination_hub, weight, promised_de
 
 
 def get_owned_shipment(shipper_id, shipment_id):
-    """The shipment if it exists and belongs to this shipper, else None."""
     return fetch_one(
         """SELECT shipment_id, user_id, origin_hub, destination_hub, weight,
                   promised_delivery, current_status, on_time_outcome
@@ -49,9 +52,9 @@ def get_owned_shipment(shipper_id, shipment_id):
     )
 
 
-def update_shipment(shipper_id, shipment_id, origin_hub, destination_hub, weight, promised_delivery):
-    """Only the owner may update. Once booked, lane and weight are locked by
-    trg_shipment_guard; its message comes back in the Result."""
+def update_shipment(
+    shipper_id, shipment_id, origin_hub, destination_hub, weight, promised_delivery
+):
     if get_owned_shipment(shipper_id, shipment_id) is None:
         return Result(False, f"Shipment {shipment_id} doesn't exist or isn't yours.")
     err = check_lane(origin_hub, destination_hub)
@@ -63,10 +66,21 @@ def update_shipment(shipper_id, shipment_id, origin_hub, destination_hub, weight
     if promised_delivery is None:
         return Result(False, "Enter a promised delivery date.")
     return run_write(
-        [("""UPDATE Shipment
+        [
+            (
+                """UPDATE Shipment
              SET origin_hub = %s, destination_hub = %s, weight = %s, promised_delivery = %s
              WHERE shipment_id = %s AND user_id = %s""",
-          (origin_hub, destination_hub, w, promised_delivery, shipment_id, shipper_id))],
+                (
+                    origin_hub,
+                    destination_hub,
+                    w,
+                    promised_delivery,
+                    shipment_id,
+                    shipper_id,
+                ),
+            )
+        ],
         f"Shipment {shipment_id} updated.",
     )
 
@@ -84,7 +98,6 @@ def list_shipper_shipments(shipper_id):
 
 
 def eligible_departures(shipment_id):
-    """Departures on the shipment's lane with room for its weight (to help the user pick)."""
     return fetch_all(
         """SELECT d.departure_id, d.origin_hub, d.destination_hub, d.departure_datetime,
                   dl.max_weight, dl.booked_weight, dl.remaining_weight
@@ -98,15 +111,20 @@ def eligible_departures(shipment_id):
 
 
 def book_shipment(shipper_id, shipment_id, departure_id):
-    """Calls the book_shipment stored procedure (atomic capacity check)."""
     conn = get_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("CALL book_shipment(%s, %s, %s, @ok, @msg)", (shipment_id, departure_id, shipper_id))
+            cur.execute(
+                "CALL book_shipment(%s, %s, %s, @ok, @msg)",
+                (shipment_id, departure_id, shipper_id),
+            )
             cur.execute("SELECT @ok AS ok, @msg AS msg")
             row = cur.fetchone()
+        if row is None:
+            conn.rollback()
+            return Result(False, "Booking failed: no result returned.")
         conn.commit()
-        return Result(bool(row["ok"]), row["msg"])
+        return Result(bool(row.get("ok")), row.get("msg", "Booking failed."))
     except pymysql.MySQLError as e:
         conn.rollback()
         return Result(False, friendly_error(e))
@@ -115,7 +133,6 @@ def book_shipment(shipper_id, shipment_id, departure_id):
 
 
 def get_shipment(shipment_id):
-    """Shipment header for tracking (any role)."""
     return fetch_one(
         """SELECT s.shipment_id, s.user_id, s.origin_hub, s.destination_hub, s.weight,
                   s.promised_delivery, s.current_status, s.on_time_outcome, b.departure_id
@@ -126,7 +143,6 @@ def get_shipment(shipment_id):
 
 
 def scan_history(shipment_id):
-    """All scans in chronological order."""
     return fetch_all(
         """SELECT e.scan_seq, e.`timestamp`, e.hub_id, h.name AS hub_name, e.shipment_status
            FROM ScanEvent e JOIN Hub h ON h.hub_id = e.hub_id

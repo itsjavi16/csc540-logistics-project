@@ -1,4 +1,4 @@
-# Carrier screens (Project Application Flow: "Carrier pages")
+# Carrier screens
 
 # A carrier login acts for its company: vehicles and departures "owned by the current carrier" are the company's (CarrierCompany)
 
@@ -186,45 +186,45 @@ def update_vehicle():
         tab_common, tab_type = st.tabs(
             ["1. Update Common Details", "2. Update Type Details"]
         )
-        with tab_common:
-            with st.form(f"common_{v['vehicle_id']}"):
-                hub = hub_input(
-                    "Home Hub ID", f"in_hub_{v['vehicle_id']}", v["home_hub_id"]
+        with tab_common, st.form(f"common_{v['vehicle_id']}"):
+            hub = hub_input(
+                "Home Hub ID", f"in_hub_{v['vehicle_id']}", v["home_hub_id"]
+            )
+            if st.form_submit_button("Save common details", type="primary"):
+                res = db_call(
+                    vehicles.update_home_hub, u["carrier_id"], v["vehicle_id"], hub
                 )
-                if st.form_submit_button("Save common details", type="primary"):
-                    res = db_call(
-                        vehicles.update_home_hub, u["carrier_id"], v["vehicle_id"], hub
-                    )
-                    if res.ok:
-                        flash(res)
-                        go("carrier_vehicles")
-                        st.rerun()
-                    show_result(res)
-        with tab_type:
-            with st.form(f"type_{v['vehicle_id']}"):
-                details = _detail_inputs(
-                    v["vehicle_type"],
-                    v["details"],
-                    key_prefix=f"in_det_{v['vehicle_id']}",
+                if res.ok:
+                    flash(res)
+                    go("carrier_vehicles")
+                    st.rerun()
+                show_result(res)
+        with tab_type, st.form(f"type_{v['vehicle_id']}"):
+            details = _detail_inputs(
+                v["vehicle_type"],
+                v["details"],
+                key_prefix=f"in_det_{v['vehicle_id']}",
+            )
+            if st.form_submit_button("Save type details", type="primary"):
+                res = db_call(
+                    vehicles.update_type_details,
+                    u["carrier_id"],
+                    v["vehicle_id"],
+                    details,
                 )
-                if st.form_submit_button("Save type details", type="primary"):
-                    res = db_call(
-                        vehicles.update_type_details,
-                        u["carrier_id"],
-                        v["vehicle_id"],
-                        details,
-                    )
-                    if res.ok:
-                        flash(res)
-                        go("carrier_vehicles")
-                        st.rerun()
-                    show_result(res)
+                if res.ok:
+                    flash(res)
+                    go("carrier_vehicles")
+                    st.rerun()
+                show_result(res)
         with st.expander("Delete this vehicle"):
             st.caption(
                 "Removes the vehicle and its type details from your fleet. "
                 "A vehicle that is assigned to departures can't be deleted."
             )
-            if st.button(f"Delete vehicle {v['vehicle_id']}", key=f"del_{v['vehicle_id']}"):
+            if st.button(
+                f"Delete vehicle {v['vehicle_id']}", key=f"del_{v['vehicle_id']}"
+            ):
                 res = db_call(vehicles.delete_vehicle, u["carrier_id"], v["vehicle_id"])
                 if res.ok:
                     flash(res)
@@ -305,9 +305,7 @@ def schedule_departure():
 
 def update_departure():
     u = require_role(ROLE)
-    header(
-        "Carrier: Update Departure", BASE + ["Departures", "Update Departure"]
-    )
+    header("Carrier: Update Departure", BASE + ["Departures", "Update Departure"])
     st.caption(
         "Capacity can't go below the weight already booked, and the lane can't change once shipments are booked."
     )
@@ -396,7 +394,7 @@ def view_departures():
     )
 
 
-# ------------------------------------------------------------------ Scans
+# Scans
 
 
 def post_scan_screen():

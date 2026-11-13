@@ -1,5 +1,5 @@
-"""Carrier actions on departures. A carrier operates a departure when the
-departure's vehicle belongs to the carrier's company."""
+# Carrier actions on departures. A carrier operates a departure when the
+# departure's vehicle belongs to the carrier's company.
 
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
@@ -9,11 +9,18 @@ from src.models.hubs import check_lane
 
 
 def _owns_vehicle(carrier_id, vehicle_id):
-    return fetch_one("SELECT 1 AS x FROM Vehicle WHERE vehicle_id = %s AND carrier_id = %s",
-                     (vehicle_id, carrier_id)) is not None
+    return (
+        fetch_one(
+            "SELECT 1 AS x FROM Vehicle WHERE vehicle_id = %s AND carrier_id = %s",
+            (vehicle_id, carrier_id),
+        )
+        is not None
+    )
 
 
-def _check(carrier_id, vehicle_id, origin_hub, destination_hub, departure_datetime, max_weight):
+def _check(
+    carrier_id, vehicle_id, origin_hub, destination_hub, departure_datetime, max_weight
+):
     if vehicle_id is None or not _owns_vehicle(carrier_id, vehicle_id):
         return f"Vehicle {vehicle_id} doesn't exist or isn't yours.", None
     err = check_lane(origin_hub, destination_hub)
@@ -30,14 +37,27 @@ def _check(carrier_id, vehicle_id, origin_hub, destination_hub, departure_dateti
     return None, cap
 
 
-def schedule_departure(carrier_id, vehicle_id, origin_hub, destination_hub, departure_datetime, max_weight):
-    err, cap = _check(carrier_id, vehicle_id, origin_hub, destination_hub, departure_datetime, max_weight)
+def schedule_departure(
+    carrier_id, vehicle_id, origin_hub, destination_hub, departure_datetime, max_weight
+):
+    err, cap = _check(
+        carrier_id,
+        vehicle_id,
+        origin_hub,
+        destination_hub,
+        departure_datetime,
+        max_weight,
+    )
     if err:
         return Result(False, err)
     res = run_write(
-        [("""INSERT INTO Departure (vehicle_id, origin_hub, destination_hub, departure_datetime, max_weight)
+        [
+            (
+                """INSERT INTO Departure (vehicle_id, origin_hub, destination_hub, departure_datetime, max_weight)
              VALUES (%s, %s, %s, %s, %s)""",
-          (vehicle_id, origin_hub, destination_hub, departure_datetime, cap))],
+                (vehicle_id, origin_hub, destination_hub, departure_datetime, cap),
+            )
+        ],
         "Departure scheduled.",
     )
     if res.ok:
@@ -57,27 +77,50 @@ def get_owned_departure(carrier_id, departure_id):
     )
 
 
-def update_departure(carrier_id, departure_id, vehicle_id, origin_hub, destination_hub,
-                     departure_datetime, max_weight):
-    """trg_departure_guard rejects capacity below the booked load and lane
-    changes once shipments are booked; its message comes back in the Result."""
+def update_departure(
+    carrier_id,
+    departure_id,
+    vehicle_id,
+    origin_hub,
+    destination_hub,
+    departure_datetime,
+    max_weight,
+):
+
     if get_owned_departure(carrier_id, departure_id) is None:
         return Result(False, f"Departure {departure_id} doesn't exist or isn't yours.")
-    err, cap = _check(carrier_id, vehicle_id, origin_hub, destination_hub, departure_datetime, max_weight)
+    err, cap = _check(
+        carrier_id,
+        vehicle_id,
+        origin_hub,
+        destination_hub,
+        departure_datetime,
+        max_weight,
+    )
     if err:
         return Result(False, err)
     return run_write(
-        [("""UPDATE Departure
+        [
+            (
+                """UPDATE Departure
              SET vehicle_id = %s, origin_hub = %s, destination_hub = %s,
                  departure_datetime = %s, max_weight = %s
              WHERE departure_id = %s""",
-          (vehicle_id, origin_hub, destination_hub, departure_datetime, cap, departure_id))],
+                (
+                    vehicle_id,
+                    origin_hub,
+                    destination_hub,
+                    departure_datetime,
+                    cap,
+                    departure_id,
+                ),
+            )
+        ],
         f"Departure {departure_id} updated.",
     )
 
 
 def list_carrier_bookings(carrier_id):
-    """Shipments booked on the carrier's departures (helps pick a shipment + departure for a scan)."""
     return fetch_all(
         """SELECT b.departure_id, b.shipment_id, s.origin_hub, s.destination_hub, s.weight,
                   s.current_status, s.promised_delivery

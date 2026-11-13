@@ -1,7 +1,5 @@
 # Navigation and shared widgets for the Streamlit app.
 
-# Navigation follows "Project Application Flow": each screen is a page name in st.session_state["page"], and the buttons on a screen (GoBack, LandingPage,
-# Cancel, Logout) move between them. No SQL lives in the UI; every screen calls functions in src/models or src/reports.
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -99,7 +97,6 @@ def header(title, crumbs=None):
 
 
 def nav_buttons(buttons):
-    # Row of navigation buttons: [(label, page), ...]. A page of None logs out
     cols = st.columns(len(buttons))
     for col, (label, page) in zip(cols, buttons):
         with col:
@@ -116,7 +113,6 @@ def nav_buttons(buttons):
 
 
 def menu(items):
-    # A landing/menu screen: one big button per numbered option, like the flow's menus
     for i, (label, page) in enumerate(items, start=1):
         if page is None:
             st.button(
@@ -136,7 +132,6 @@ def menu(items):
 
 
 def parse_id(text, what):
-    # Positive integer from a text box, or (None, error message)
     t = (text or "").strip()
     if not t:
         return None, f"Enter the {what}."
@@ -146,7 +141,6 @@ def parse_id(text, what):
 
 
 def hub_input(label, key, value=None):
-    # Hub dropdown: shows "RDU - Raleigh Hub (Southeast)", returns the hub ID (None until chosen)
     hubs = db_call(list_hubs)
     ids = [h["hub_id"] for h in hubs]
     names = {h["hub_id"]: f"{h['hub_id']} - {h['name']} ({h['region']})" for h in hubs}
@@ -196,7 +190,7 @@ def datetime_inputs(label, key, default=None):
 def _clean(v):
     if isinstance(v, Decimal):
         return float(v)
-    if isinstance(v, timedelta):  # e.g. TIMEDIFF results: show hours:minutes, like 1:05
+    if isinstance(v, timedelta):  # show hours:minutes
         total = int(v.total_seconds())
         return f"{total // 3600}:{total % 3600 // 60:02d}"
     if isinstance(v, str) and v in STATUS_LABELS:
@@ -221,7 +215,6 @@ def show_result(result):
 
 
 def db_call(fn, *args, **kwargs):
-    # Run a data-layer read; on a database error show it and stop the screen
     try:
         return fn(*args, **kwargs)
     except pymysql.MySQLError as e:
@@ -230,7 +223,6 @@ def db_call(fn, *args, **kwargs):
 
 
 def reference(title, rows, rename=None):
-    # Collapsible lookup table (valid hubs, lanes, your shipments...)
     with st.expander(title):
         table(rows, rename)
 

@@ -1,9 +1,4 @@
-"""Published, read-only performance reports (Viewer).
-
-Date ranges filter on:
-  - delivery date (the DELIVERED scan) for on-time and running-total reports
-  - departure date for lane volume and top departures
-"""
+# Published, read-only performance reports (Viewer)
 
 from datetime import date
 
@@ -23,11 +18,6 @@ _DELIVERED = """
 
 
 def on_time_by_lane(start_date, end_date):
-    """On-time and late rates per lane for shipments delivered in the period.
-
-    Adds up the LaneOnTime view's per-day rows in the date range, then divides:
-    on-time % = on-time deliveries / all deliveries on that lane.
-    """
     return fetch_all(
         """SELECT origin_hub, destination_hub,
                   SUM(delivered) AS delivered,
@@ -44,7 +34,6 @@ def on_time_by_lane(start_date, end_date):
 
 
 def on_time_by_carrier(start_date, end_date):
-    """Each carrier's on-time rate, ranked best first."""
     return fetch_all(
         f"""WITH delivered AS ({_DELIVERED}),
             rates AS (
@@ -63,7 +52,6 @@ def on_time_by_carrier(start_date, end_date):
 
 
 def lane_volume_ranking(start_date, end_date):
-    """Lanes ranked by total booked shipment weight on departures in the period."""
     return fetch_all(
         """WITH carried AS (
                SELECT d.origin_hub, d.destination_hub,
@@ -83,7 +71,6 @@ def lane_volume_ranking(start_date, end_date):
 
 
 def top_departures_per_lane(start_date, end_date, top_n):
-    """Within each lane, departures ranked by booked load; top N per lane."""
     return fetch_all(
         """WITH ranked AS (
                SELECT d.origin_hub, d.destination_hub, d.departure_id, d.departure_datetime,
@@ -104,7 +91,6 @@ def top_departures_per_lane(start_date, end_date, top_n):
 
 
 def running_total_deliveries(start_date, end_date, carrier_id=None):
-    """Cumulative delivered shipments (and kg) per carrier, day by day."""
     return fetch_all(
         f"""WITH delivered AS ({_DELIVERED}),
             daily AS (
@@ -125,7 +111,6 @@ def running_total_deliveries(start_date, end_date, carrier_id=None):
 
 
 def at_risk_in_transit(n_days, as_of=None):
-    """All in-transit shipments whose promised date has passed or is within n days."""
     as_of = as_of or date.today()
     return fetch_all(
         """SELECT s.shipment_id, s.user_id AS shipper_user_id, s.origin_hub, s.destination_hub, s.promised_delivery,

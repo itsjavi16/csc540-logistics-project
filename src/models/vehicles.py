@@ -1,5 +1,5 @@
-"""Carrier actions on vehicles. "Owned by the carrier" means owned by the
-logged-in carrier's company (Vehicle.carrier_id = CarrierCompany.carrier_id)."""
+# Carrier actions on vehicles. "Owned by the carrier" means owned by the
+# logged-in carrier's company (Vehicle.carrier_id = CarrierCompany.carrier_id)
 
 import pymysql
 
@@ -13,20 +13,30 @@ TYPES = {
     "RAIL_CAR": "Rail Car",
 }
 
-# Type-specific table and columns: (column, label)
 TYPE_DETAILS = {
-    "BOX_TRUCK": ("BoxTruck", [("cargo_volume", "Cargo volume (m³)"),
-                               ("gross_weight_rating", "Gross weight rating (kg)")]),
-    "REFRIGERATED_VAN": ("RefrigeratedVan", [("temp_min", "Minimum temperature (°C)"),
-                                             ("temp_max", "Maximum temperature (°C)"),
-                                             ("payload_limit", "Payload limit (kg)")]),
-    "RAIL_CAR": ("RailCar", [("axle_count", "Axle count"),
-                             ("track_gauge", "Track gauge (mm)")]),
+    "BOX_TRUCK": (
+        "BoxTruck",
+        [
+            ("cargo_volume", "Cargo volume (m³)"),
+            ("gross_weight_rating", "Gross weight rating (kg)"),
+        ],
+    ),
+    "REFRIGERATED_VAN": (
+        "RefrigeratedVan",
+        [
+            ("temp_min", "Minimum temperature (°C)"),
+            ("temp_max", "Maximum temperature (°C)"),
+            ("payload_limit", "Payload limit (kg)"),
+        ],
+    ),
+    "RAIL_CAR": (
+        "RailCar",
+        [("axle_count", "Axle count"), ("track_gauge", "Track gauge (mm)")],
+    ),
 }
 
 
 def check_new_vehicle(carrier_id, vehicle_id, home_hub_id, vehicle_type):
-    """Validate the common details (first Add Vehicle page). Returns an error or None."""
     if vehicle_id is not None:
         if vehicle_id <= 0:
             return "Vehicle ID must be a positive number."
@@ -48,15 +58,18 @@ def _check_details(vehicle_type, details):
             return f"Enter {label.lower()}."
         if col not in ("temp_min", "temp_max") and v <= 0:
             return f"{label} must be greater than 0."
-    if vehicle_type == "RAIL_CAR" and int(details["axle_count"]) != details["axle_count"]:
+    if (
+        vehicle_type == "RAIL_CAR"
+        and int(details["axle_count"]) != details["axle_count"]
+    ):
         return "Axle count must be a whole number."
     return None
 
 
 def add_vehicle(carrier_id, vehicle_id, home_hub_id, vehicle_type, details):
-    """Insert the common row and the type-specific row in one transaction.
-    vehicle_id may be None to let the database assign one."""
-    err = check_new_vehicle(carrier_id, vehicle_id, home_hub_id, vehicle_type) or _check_details(vehicle_type, details)
+    err = check_new_vehicle(
+        carrier_id, vehicle_id, home_hub_id, vehicle_type
+    ) or _check_details(vehicle_type, details)
     if err:
         return Result(False, err)
     table, cols = TYPE_DETAILS[vehicle_type]
@@ -85,7 +98,6 @@ def add_vehicle(carrier_id, vehicle_id, home_hub_id, vehicle_type, details):
 
 
 def get_owned_vehicle(carrier_id, vehicle_id):
-    """Common + type-specific attributes, or None if not this carrier's vehicle."""
     v = fetch_one(
         "SELECT vehicle_id, carrier_id, home_hub_id, vehicle_type FROM Vehicle WHERE vehicle_id = %s AND carrier_id = %s",
         (vehicle_id, carrier_id),
@@ -93,9 +105,13 @@ def get_owned_vehicle(carrier_id, vehicle_id):
     if v is None:
         return None
     table, cols = TYPE_DETAILS[v["vehicle_type"]]
-    details = fetch_one(
-        f"SELECT {', '.join(c for c, _ in cols)} FROM {table} WHERE vehicle_id = %s", (vehicle_id,)
-    ) or {}
+    details = (
+        fetch_one(
+            f"SELECT {', '.join(c for c, _ in cols)} FROM {table} WHERE vehicle_id = %s",
+            (vehicle_id,),
+        )
+        or {}
+    )
     v["details"] = details
     return v
 
@@ -108,8 +124,12 @@ def update_home_hub(carrier_id, vehicle_id, home_hub_id):
     if not hub_exists(home_hub_id):
         return Result(False, f"Hub {home_hub_id} doesn't exist.")
     return run_write(
-        [("UPDATE Vehicle SET home_hub_id = %s WHERE vehicle_id = %s AND carrier_id = %s",
-          (home_hub_id, vehicle_id, carrier_id))],
+        [
+            (
+                "UPDATE Vehicle SET home_hub_id = %s WHERE vehicle_id = %s AND carrier_id = %s",
+                (home_hub_id, vehicle_id, carrier_id),
+            )
+        ],
         f"Vehicle {vehicle_id} now homed at {home_hub_id}.",
     )
 
@@ -124,30 +144,40 @@ def update_type_details(carrier_id, vehicle_id, details):
     table, cols = TYPE_DETAILS[v["vehicle_type"]]
     col_names = [c for c, _ in cols]
     return run_write(
-        [(f"UPDATE {table} SET {', '.join(f'{c} = %s' for c in col_names)} WHERE vehicle_id = %s",
-          (*[details[c] for c in col_names], vehicle_id))],
+        [
+            (
+                f"UPDATE {table} SET {', '.join(f'{c} = %s' for c in col_names)} WHERE vehicle_id = %s",
+                (*[details[c] for c in col_names], vehicle_id),
+            )
+        ],
         f"{TYPES[v['vehicle_type']]} {vehicle_id} details updated.",
     )
 
 
 def delete_vehicle(carrier_id, vehicle_id):
-    """Remove one of the carrier's vehicles; its BoxTruck/RefrigeratedVan/RailCar row
-    goes with it (ON DELETE CASCADE). A vehicle with departures can't be deleted
-    (fk_departure_vehicle blocks it), so say so plainly first."""
     v = get_owned_vehicle(carrier_id, vehicle_id)
     if v is None:
         return Result(False, f"Vehicle {vehicle_id} doesn't exist or isn't yours.")
-    n = fetch_one("SELECT COUNT(*) AS n FROM Departure WHERE vehicle_id = %s", (vehicle_id,))["n"]
+    n = fetch_one(
+        "SELECT COUNT(*) AS n FROM Departure WHERE vehicle_id = %s", (vehicle_id,)
+    )["n"]
     if n:
-        return Result(False, f"Vehicle {vehicle_id} can't be deleted: it is assigned to {n} departure(s).")
+        return Result(
+            False,
+            f"Vehicle {vehicle_id} can't be deleted: it is assigned to {n} departure(s).",
+        )
     return run_write(
-        [("DELETE FROM Vehicle WHERE vehicle_id = %s AND carrier_id = %s", (vehicle_id, carrier_id))],
+        [
+            (
+                "DELETE FROM Vehicle WHERE vehicle_id = %s AND carrier_id = %s",
+                (vehicle_id, carrier_id),
+            )
+        ],
         f"{TYPES[v['vehicle_type']]} {vehicle_id} deleted.",
     )
 
 
 def list_vehicles(carrier_id):
-    """All of the carrier's vehicles with their type-specific attributes."""
     return fetch_all(
         """SELECT v.vehicle_id, v.vehicle_type, v.home_hub_id,
                   bt.cargo_volume, bt.gross_weight_rating,
